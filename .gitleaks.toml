@@ -1,0 +1,4 @@
+title = "homeserver gitleaks config"
+
+[extend]
+useDefault = true

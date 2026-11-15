@@ -1,0 +1,33 @@
+# secrets and keys - never commit
+*.agekey
+keys.txt
+age.key
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+kubeconfig
+*.kubeconfig
+*.dec.yaml
+*.dec.yml
+
+# redacted host inventory (example is committed)
+provision/inventory.yml
+provision/group_vars/*/vault*
+*.local.yml
+
+# OpenTofu / Terraform state and plugins
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+!*.tfvars.example
+
+# local tooling
+.claude/settings.local.json
+.pre-commit-cache/
+.venv/
+__pycache__/
+.DS_Store
+.gitleaks.local.toml
