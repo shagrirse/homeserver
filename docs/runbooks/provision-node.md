@@ -15,7 +15,7 @@ secret and restoring volumes into the cluster are outside its scope.
 | `storage_tuning` | `noatime` root, zram swap, journal kept in RAM |
 | `tailscale` | Installs Tailscale and joins the tailnet |
 | `hardening` | Key-only SSH, ufw deny-by-default (SSH from the LAN, everything on `tailscale0`) |
-| `k3s` | cgroups and modules, k3s without Traefik, memory reserved for the host, volumes under `/srv/k8s` |
+| `k3s` | memory cgroups, k3s without Traefik, memory reserved for the host, volumes under `/srv/k8s` |
 
 No ports are opened to the internet. Public apps go out through a Cloudflare
 Tunnel and private apps over Tailscale.

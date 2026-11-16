@@ -1,10 +1,4 @@
 ---
-- name: Install kernel modules required for the k3s network
-  ansible.builtin.apt:
-    name: linux-modules-extra-raspi
-    state: present
-  notify: Reboot node
-
 - name: Enable memory cgroups on the kernel command line
   ansible.builtin.lineinfile:
     path: /boot/firmware/cmdline.txt
@@ -14,7 +8,7 @@
   notify: Reboot node
 
 # One reboot covers everything earlier roles queued (bootloader, fstab,
-# kernel upgrade) plus the cgroup and module changes above.
+# kernel upgrade) plus the cgroup change above.
 - name: Apply pending changes that need a reboot
   ansible.builtin.meta: flush_handlers
 
