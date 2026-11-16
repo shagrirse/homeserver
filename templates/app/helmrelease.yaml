@@ -1,0 +1,27 @@
+# Replace with plain manifests if the app has no suitable chart.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: APP_NAME
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: CHART_NAME
+      version: CHART_VERSION
+      sourceRef:
+        kind: HelmRepository
+        name: CHART_REPO
+        namespace: flux-system
+  values:
+    # Pin images by arm64-capable digest.
+    image:
+      repository: IMAGE_REPO
+      digest: sha256:REPLACE_ME
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+    # Define liveness and readiness probes per the chart's values.

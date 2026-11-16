@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(kubectl get:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(flux get:*)",
+      "Bash(just lint)",
+      "Bash(just validate)",
+      "Bash(just scan-history)"
+    ],
+    "ask": [
+      "Bash(flux reconcile:*)",
+      "Bash(ssh:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Bash(kubectl apply:*)",
+      "Bash(kubectl delete:*)",
+      "Bash(kubectl edit:*)",
+      "Bash(kubectl patch:*)",
+      "Bash(sops -d:*)",
+      "Bash(sops --decrypt:*)",
+      "Bash(sops decrypt:*)",
+      "Bash(sops exec-env:*)",
+      "Bash(sops exec-file:*)",
+      "Bash(kubectl get secret:*)",
+      "Bash(kubectl get secrets:*)",
+      "Read(~/.config/sops/age/**)",
+      "Read(**/*.agekey)",
+      "Read(**/keys.txt)",
+      "Read(**/.env)",
+      "Read(**/provision/inventory.yml)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read",
+        "hooks": [
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block-secrets.sh" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-commit.sh" }
+        ]
+      }
+    ]
+  }
+}
