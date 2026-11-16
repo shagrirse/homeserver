@@ -31,6 +31,7 @@
     name: tailscaled
     enabled: true
     state: started
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Read Tailscale state
   ansible.builtin.command: tailscale status --json
