@@ -17,4 +17,5 @@ What else was weighed and why it lost.
 
 ## Consequences
 
-What gets easier, what gets harder, and what must be revisited later.
+What gets easier, what gets harder, and what conditions would reopen the
+decision.

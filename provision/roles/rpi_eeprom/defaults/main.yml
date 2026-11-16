@@ -1,0 +1,5 @@
+---
+# Boot order is read right to left: 6 = NVMe, 4 = USB, 1 = SD, f = restart.
+# NVMe first, then USB, then SD, so an SSD with an OS boots as soon as it is
+# attached and the SD card stays a fallback.
+rpi_eeprom_boot_order: "0xf146"

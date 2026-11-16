@@ -1,0 +1,7 @@
+---
+# Shared by every role. Roles notify this handler and the k3s role flushes
+# handlers once, after its own cgroup and module changes, so a single reboot
+# covers all pending changes.
+- name: Reboot node
+  ansible.builtin.reboot:
+    reboot_timeout: 600

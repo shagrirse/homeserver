@@ -1,0 +1,50 @@
+---
+- name: Mount root with noatime
+  ansible.posix.mount:
+    path: /
+    src: "{{ storage_tuning_root_source }}"
+    fstype: "{{ storage_tuning_root_fstype }}"
+    # errors=remount-ro stops writes after a filesystem error, as Ubuntu's
+    # stock entry does. TRIM runs weekly through fstrim.timer.
+    opts: defaults,noatime,errors=remount-ro
+    dump: "0"
+    passno: "1"
+    state: present
+  notify: Reboot node
+
+- name: Install zram swap
+  ansible.builtin.apt:
+    name: systemd-zram-generator
+    state: present
+
+- name: Configure zram swap
+  ansible.builtin.copy:
+    dest: /etc/systemd/zram-generator.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [zram0]
+      zram-size = {{ storage_tuning_zram_size }}
+      compression-algorithm = zstd
+  notify: Restart zram
+
+- name: Create journald drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Keep the journal in RAM
+  ansible.builtin.copy:
+    dest: /etc/systemd/journald.conf.d/volatile.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Journal]
+      Storage=volatile
+      RuntimeMaxUse={{ storage_tuning_journal_max_use }}
+  notify: Restart journald

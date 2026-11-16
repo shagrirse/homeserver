@@ -1,0 +1,20 @@
+# Managed by Ansible.
+write-kubeconfig-mode: "0600"
+secrets-encryption: true
+default-local-storage-path: {{ k3s_storage_path }}
+# Traefik is installed and upgraded through Flux instead of the k3s bundle.
+disable:
+  - traefik
+# Keep memory back for the OS (sshd, tailscaled) and k3s itself, so
+# workloads are evicted before the node becomes unreachable.
+kubelet-arg:
+  - "system-reserved=memory={{ k3s_system_reserved_memory }}"
+  - "kube-reserved=memory={{ k3s_kube_reserved_memory }}"
+  - "eviction-hard={{ k3s_eviction_hard }}"
+{% set sans = k3s_tls_san + ([k3s_api_host] if k3s_api_host is defined else []) %}
+{% if sans %}
+tls-san:
+{% for name in sans %}
+  - {{ name }}
+{% endfor %}
+{% endif %}

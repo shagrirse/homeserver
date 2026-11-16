@@ -1,0 +1,57 @@
+---
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Resolve the hostname locally
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s'
+    line: "127.0.1.1 {{ inventory_hostname }}"
+
+# cloud-init sets the hostname on first boot and never manages /etc/hosts
+# (see the example user-data). This drop-in makes Ansible the only owner of
+# both, so no reboot reverts them.
+- name: Stop cloud-init managing the hostname
+  ansible.builtin.copy:
+    dest: /etc/cloud/cloud.cfg.d/99-ansible-hostname.cfg
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      preserve_hostname: true
+      manage_etc_hosts: false
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ base_timezone }}"
+
+# On first boot cloud-init and apt-daily can hold the dpkg lock for minutes.
+- name: Update apt cache and upgrade packages
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    upgrade: safe
+    lock_timeout: 600
+
+- name: Check whether an upgrade needs a reboot
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: base_reboot_required
+  changed_when: base_reboot_required.stat.exists
+  notify: Reboot node
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name: "{{ base_packages }}"
+    state: present
+
+- name: Enable automatic security updates
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";

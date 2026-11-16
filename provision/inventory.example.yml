@@ -1,0 +1,16 @@
+# Copy to the real inventory file next to this one (gitignored) and fill it in.
+# 192.0.2.0/24 and example.com are documentation-only placeholders.
+all:
+  children:
+    homeserver:
+      hosts:
+        pi:
+          ansible_host: 192.0.2.10
+          ansible_user: ubuntu
+          # Tailscale name the node will register under, and the address
+          # kubectl uses from your workstation.
+          tailscale_hostname: homeserver
+          k3s_api_host: homeserver.example.ts.net
+          # Where SSH is reachable from on the LAN. Tailscale is always allowed.
+          hardening_ssh_allowed_cidrs:
+            - 192.0.2.0/24

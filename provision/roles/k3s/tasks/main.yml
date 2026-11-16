@@ -1,0 +1,92 @@
+---
+- name: Install kernel modules required for the k3s network
+  ansible.builtin.apt:
+    name: linux-modules-extra-raspi
+    state: present
+  notify: Reboot node
+
+- name: Enable memory cgroups on the kernel command line
+  ansible.builtin.lineinfile:
+    path: /boot/firmware/cmdline.txt
+    regexp: '^((?!.*\bcgroup_memory=1\b).*)$'
+    line: '\1 cgroup_enable=memory cgroup_memory=1'
+    backrefs: true
+  notify: Reboot node
+
+# One reboot covers everything earlier roles queued (bootloader, fstab,
+# kernel upgrade) plus the cgroup and module changes above.
+- name: Apply pending changes that need a reboot
+  ansible.builtin.meta: flush_handlers
+
+- name: Create the persistent volume directory
+  ansible.builtin.file:
+    path: "{{ k3s_storage_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create the k3s config directory
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Write k3s config
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart k3s
+
+- name: Read installed k3s version
+  ansible.builtin.command: k3s --version
+  register: k3s_installed
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Install k3s
+  vars:
+    # First line looks like "k3s version v1.36.6+k3s1 (abcdef12)".
+    k3s_installed_version: >-
+      {{ k3s_installed.stdout_lines | default([]) | first | default('')
+         | regex_replace('^k3s version (\S+).*$', '\1') }}
+  when: k3s_installed.rc != 0 or k3s_installed_version != k3s_version
+  block:
+    # Pinned to the release tag and checksummed. The script then verifies the
+    # k3s binary against the release's own sha256 file.
+    - name: Download the k3s install script
+      ansible.builtin.get_url:
+        url: "https://raw.githubusercontent.com/k3s-io/k3s/{{ k3s_version | urlencode }}/install.sh"
+        checksum: "sha256:{{ k3s_install_script_sha256 }}"
+        dest: /usr/local/share/k3s-install.sh
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Run the k3s install script
+      ansible.builtin.command: /usr/local/share/k3s-install.sh
+      environment:
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
+      changed_when: true
+
+- name: Enable k3s
+  ansible.builtin.systemd:
+    name: k3s
+    enabled: true
+    state: started
+
+# Retried because `kubectl wait` fails at once while the Node object is
+# missing, which is normal right after a first install.
+- name: Wait for the node to be Ready
+  ansible.builtin.command: k3s kubectl wait --for=condition=Ready node --all --timeout=30s
+  register: k3s_node_ready
+  until: k3s_node_ready.rc == 0
+  retries: 20
+  delay: 10
+  changed_when: false

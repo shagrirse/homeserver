@@ -1,0 +1,20 @@
+#cloud-config
+# First-boot config for the Ubuntu Server image. Copy to user-data on the
+# boot partition after flashing (or paste into Raspberry Pi Imager's custom
+# settings), replacing the placeholders. The same file is used when moving to
+# an SSD, so a rebuilt node comes up identically.
+# Match the host name in the inventory. Ansible owns the hostname and
+# /etc/hosts from its first run. user-data overrides cloud.cfg.d drop-ins, so
+# this must stay false or cloud-init rewrites /etc/hosts on every boot.
+hostname: pi
+manage_etc_hosts: false
+users:
+  - name: ubuntu
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAA_REPLACE_WITH_YOUR_PUBLIC_KEY
+ssh_pwauth: false
+package_update: true
