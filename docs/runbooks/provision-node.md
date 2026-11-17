@@ -10,7 +10,7 @@ secret and restoring volumes into the cluster are outside its scope.
 
 | Role | Effect |
 | --- | --- |
-| `base` | Hostname, timezone, apt upgrade, automatic security updates |
+| `base` | Hostname, timezone, apt upgrade, automatic security updates (kernels need a manual reboot, see [kernel-updates.md](kernel-updates.md)) |
 | `rpi_eeprom` | Boot order NVMe, then USB, then SD |
 | `storage_tuning` | `noatime` root, zram swap, journal kept in RAM |
 | `tailscale` | Installs Tailscale and joins the tailnet |

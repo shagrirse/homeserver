@@ -26,5 +26,5 @@
       or (base_tryboot_state.content | b64decode | trim) != 'bad'
     fail_msg: >-
       The staged kernel in /boot/firmware/new failed to boot and the node fell
-      back to the previous one. Check `journalctl -b -1` on the node.
+      back to the previous one. See docs/runbooks/kernel-updates.md.
   listen: Reboot node
