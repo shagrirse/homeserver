@@ -15,7 +15,7 @@ secret and restoring volumes into the cluster are outside its scope.
 | `storage_tuning` | `noatime` root, zram swap, journal kept in RAM |
 | `tailscale` | Installs Tailscale and joins the tailnet |
 | `hardening` | Key-only SSH, ufw deny-by-default (SSH from the LAN, everything on `tailscale0`) |
-| `k3s` | memory cgroups, k3s without Traefik, memory reserved for the host, volumes under `/srv/k8s` |
+| `k3s` | Checks memory cgroups, k3s without Traefik, memory reserved for the host, volumes under `/srv/k8s` |
 
 No ports are opened to the internet. Public apps go out through a Cloudflare
 Tunnel and private apps over Tailscale.
@@ -63,7 +63,7 @@ the tailnet after about 180 days. The age key is described in
 
 ```sh
 just provision-check   # dry run
-just provision         # apply; reboots the node once when needed
+just provision         # apply; reboots the node when needed (twice for a kernel update)
 just kubeconfig        # writes ~/.kube/homeserver.yaml (0600), pointed at Tailscale
 kubectl --kubeconfig ~/.kube/homeserver.yaml get nodes
 ```
