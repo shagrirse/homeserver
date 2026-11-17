@@ -1,6 +1,6 @@
 ---
-# A dry run does not install the generator, so the unit does not exist yet.
-# A real run still fails on any error.
+# In a dry run on a fresh node the generator install is only simulated, so
+# the unit can be missing. A real run still fails on any error.
 - name: Restart zram
   ansible.builtin.systemd:
     name: systemd-zram-setup@zram0.service
