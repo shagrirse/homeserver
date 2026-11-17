@@ -6,7 +6,7 @@
 ## Context
 
 The homeserver runs on a single Raspberry Pi 5 (8GB, arm64) with Ubuntu Server
-24.04 LTS, booting from microSD or an SSD. The repo should showcase real
+(see [0003](0003-ubuntu-26-04-host-os.md)), booting from microSD or an SSD. The repo should showcase real
 deployment practice, so workloads are declared and reproducible rather than
 hand-run containers. Memory is the main constraint.
 

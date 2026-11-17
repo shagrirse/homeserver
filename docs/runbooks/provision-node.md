@@ -53,7 +53,9 @@ the tailnet after about 180 days. The age key is described in
 
 ## Flash
 
-1. Flash Ubuntu Server 24.04 LTS (arm64) to the microSD card.
+1. Flash Ubuntu Server 26.04 LTS (arm64, Raspberry Pi preinstalled image) to
+   the microSD card with Raspberry Pi Imager. Skip its OS customisation, since
+   `user-data` below configures first boot.
 2. Put `provision/cloud-init/user-data.example.yaml`, with your SSH public key
    and the inventory host name as `hostname`, on the boot partition as
    `user-data`.

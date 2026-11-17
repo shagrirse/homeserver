@@ -8,3 +8,4 @@ link to their replacement.
 | --- | --- | --- |
 | [0001](0001-k3s-on-raspberry-pi.md) | k3s on a Raspberry Pi 5 | Accepted |
 | [0002](0002-flux-gitops.md) | Flux for GitOps delivery | Accepted |
+| [0003](0003-ubuntu-26-04-host-os.md) | Ubuntu Server 26.04 LTS as the host OS | Accepted |
