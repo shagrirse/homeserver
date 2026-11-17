@@ -73,11 +73,14 @@
         INSTALL_K3S_VERSION: "{{ k3s_version }}"
       changed_when: true
 
+# In a dry run on a fresh node the install script does not run, so the unit
+# can be missing. A real run still fails on any error.
 - name: Enable k3s
   ansible.builtin.systemd:
     name: k3s
     enabled: true
     state: started
+  ignore_errors: "{{ ansible_check_mode }}"
 
 # Retried because `kubectl wait` fails at once while the Node object is
 # missing, which is normal right after a first install.

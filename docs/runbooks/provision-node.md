@@ -72,9 +72,8 @@ The node should report `Ready`. Re-running `just provision` changes nothing
 when the node already matches.
 
 On a freshly flashed node the dry run reports the Tailscale install and
-service and the zram restart as ignored errors, because check
-mode only simulates the package installs they depend on. The real run installs
-them.
+service, the zram restart and the k3s service as ignored errors, because check
+mode only simulates the installs they depend on. The real run installs them.
 
 ## Rebuild the node
 
