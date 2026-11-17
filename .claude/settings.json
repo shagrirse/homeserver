@@ -7,7 +7,6 @@
       "Bash(kubectl logs:*)",
       "Bash(flux get:*)",
       "Bash(just lint)",
-      "Bash(just validate)",
       "Bash(just scan-history)"
     ],
     "ask": [

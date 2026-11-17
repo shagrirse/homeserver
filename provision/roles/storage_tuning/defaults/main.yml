@@ -1,0 +1,7 @@
+---
+# Reduce writes so a microSD lasts. Root is mounted by label, never by a
+# device path, so the same config works after moving to an SSD.
+storage_tuning_root_source: "LABEL=writable"
+storage_tuning_root_fstype: ext4
+storage_tuning_zram_size: "ram / 2"
+storage_tuning_journal_max_use: 64M

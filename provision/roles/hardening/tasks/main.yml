@@ -1,0 +1,52 @@
+---
+- name: Harden sshd
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-hardening.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      X11Forwarding no
+      MaxAuthTries 3
+  notify: Reload sshd
+
+- name: Check sshd config
+  ansible.builtin.command: sshd -t
+  changed_when: false
+  check_mode: false
+
+- name: Install ufw
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+- name: Rate-limit SSH from the LAN
+  community.general.ufw:
+    rule: limit
+    port: ssh
+    proto: tcp
+    src: "{{ item }}"
+  loop: "{{ hardening_ssh_allowed_cidrs }}"
+
+- name: Allow all traffic on the Tailscale interface
+  community.general.ufw:
+    rule: allow
+    interface: tailscale0
+    direction: in
+
+- name: Allow k3s pod and service traffic
+  community.general.ufw:
+    rule: allow
+    src: "{{ item }}"
+  loop:
+    - "{{ hardening_k3s_pod_cidr }}"
+    - "{{ hardening_k3s_service_cidr }}"
+
+- name: Deny incoming by default and enable ufw
+  community.general.ufw:
+    state: enabled
+    default: deny
+    direction: incoming

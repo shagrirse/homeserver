@@ -29,7 +29,7 @@ Visibility with Flux comes from Grafana dashboards and `flux get`.
 
 ## Consequences
 
-- No bundled web UI; optional third-party UIs can be added later.
+- No bundled web UI; optional third-party UIs are add-ons.
 - `flux bootstrap github` commits its own manifests, so Flux manages itself.
-- Swapping to Argo CD later would change bootstrap and secrets wiring, not the
-  repo layout.
+- Swapping to Argo CD would change bootstrap and secrets wiring, not the repo
+  layout.

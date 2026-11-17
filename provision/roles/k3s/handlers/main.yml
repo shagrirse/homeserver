@@ -1,0 +1,8 @@
+---
+# In a dry run on a fresh node the install script does not run, so the unit
+# can be missing. A real run still fails on any error.
+- name: Restart k3s
+  ansible.builtin.systemd:
+    name: k3s
+    state: restarted
+  ignore_errors: "{{ ansible_check_mode }}"

@@ -20,22 +20,17 @@ CLAUDE.md only imports it.
 - Images are pinned by digest and must support arm64. Memory is 8GB for the
   whole cluster, so every workload sets requests and limits.
 - Verify end to end after a reconcile before calling a change done.
-- Never use the em dash; use "-". Conventional Commits, with the app name as
-  scope (`feat(grafana): ...`). No agent co-author lines.
+- Conventional Commits, with the app name as scope (`feat(grafana): ...`).
 
 ## Repo map
 
 | Path | Purpose |
 | --- | --- |
-| `provision/` | Tier 0: Ansible for the Pi (OS, k3s, Flux bootstrap) |
-| `kubernetes/infrastructure/` | Tier 1: platform controllers and configs |
-| `kubernetes/apps/<app>/` | Tier 2: one self-contained unit per app |
-| `templates/app/` | Skeleton to copy for a new app |
+| `provision/` | Tier 0: Ansible for the Pi (OS, k3s) |
+| `templates/app/` | Skeleton for an app under `kubernetes/apps/<app>/` |
 | `docs/adr/` | Decision records; add one for any architectural choice |
-| `docs/runbooks/` | Operational procedures (secrets, rebuild, restore) |
+| `docs/runbooks/` | Operational procedures (secrets, provisioning) |
 | `.claude/` | Agent permissions and hooks |
-
-Not every directory exists yet; the repo is built in phases.
 
 ## App contract
 
@@ -49,6 +44,8 @@ probes, and is exposed only through a shared Traefik route. Start from
 
 - `just lint` - run all pre-commit checks
 - `just scan-history` - gitleaks over full history
+- `just provision-deps` / `provision-check` / `provision` / `kubeconfig` - node
+  provisioning, see [docs/runbooks/provision-node.md](docs/runbooks/provision-node.md)
 
 ## Docs
 

@@ -1,0 +1,91 @@
+---
+# The keyring in /usr/share/keyrings belongs to the tailscale-archive-keyring
+# package and stays; the deb822 source below pins its own key.
+- name: Remove the legacy one-line Tailscale source
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/tailscale.list
+    state: absent
+
+- name: Add Tailscale apt repository
+  ansible.builtin.deb822_repository:
+    name: tailscale
+    types: deb
+    uris: "{{ tailscale_repo_base }}"
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: main
+    signed_by: "{{ tailscale_repo_base }}/{{ ansible_facts['distribution_release'] }}.noarmor.gpg"
+    state: present
+
+# A dry run neither writes the repository above nor refreshes the cache, so
+# on a fresh node the package is unknown. A real run still fails on any error.
+- name: Install Tailscale
+  ansible.builtin.apt:
+    name: tailscale
+    update_cache: true
+    state: present
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Enable tailscaled
+  ansible.builtin.systemd:
+    name: tailscaled
+    enabled: true
+    state: started
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Read Tailscale state
+  ansible.builtin.command: tailscale status --json
+  register: tailscale_status
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Parse Tailscale state
+  ansible.builtin.set_fact:
+    tailscale_state: "{{ tailscale_status.stdout | default('{}', true) | from_json }}"
+
+- name: Join the tailnet
+  when: tailscale_state.BackendState | default('') != 'Running'
+  block:
+    - name: Require an auth key
+      ansible.builtin.assert:
+        that: tailscale_auth_key is defined
+        fail_msg: >-
+          tailscale_auth_key is missing. Add it to provision/secrets.sops.yaml,
+          see docs/runbooks/provision-node.md.
+
+    # The key goes through a root-only file on tmpfs so it never shows up in
+    # the process list.
+    - name: Stage the auth key
+      ansible.builtin.copy:
+        dest: "{{ tailscale_auth_key_path }}"
+        content: "{{ tailscale_auth_key }}"
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Register with Tailscale
+      ansible.builtin.command:
+        argv:
+          - tailscale
+          - up
+          - "--hostname={{ tailscale_hostname }}"
+          - "--auth-key=file:{{ tailscale_auth_key_path }}"
+      changed_when: true
+
+  always:
+    - name: Remove the staged auth key
+      ansible.builtin.file:
+        path: "{{ tailscale_auth_key_path }}"
+        state: absent
+
+- name: Keep the Tailscale hostname in sync
+  ansible.builtin.command:
+    argv:
+      - tailscale
+      - set
+      - "--hostname={{ tailscale_hostname }}"
+  when:
+    - tailscale_state.BackendState | default('') == 'Running'
+    - tailscale_state.Self.HostName | default('') != tailscale_hostname
+  changed_when: true

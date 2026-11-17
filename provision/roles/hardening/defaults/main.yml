@@ -1,0 +1,12 @@
+---
+# Networks allowed to reach SSH on the LAN. Override per host in the inventory.
+# Tailscale traffic is always allowed.
+hardening_ssh_allowed_cidrs:
+  - 10.0.0.0/8
+  - 172.16.0.0/12
+  - 192.168.0.0/16
+
+# k3s default pod and service ranges. Allowed so ufw does not block
+# traffic between pods and the API server.
+hardening_k3s_pod_cidr: 10.42.0.0/16
+hardening_k3s_service_cidr: 10.43.0.0/16

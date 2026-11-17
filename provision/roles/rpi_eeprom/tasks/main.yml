@@ -1,0 +1,34 @@
+---
+- name: Install bootloader tooling
+  ansible.builtin.apt:
+    name: rpi-eeprom
+    state: present
+
+- name: Read current bootloader config
+  ansible.builtin.command: rpi-eeprom-config
+  register: rpi_eeprom_current
+  changed_when: false
+  check_mode: false
+  # In a dry run on a fresh node the package install above is only simulated,
+  # so the tool can be missing. A real run still fails on any error.
+  failed_when: rpi_eeprom_current.rc != 0 and not ansible_check_mode
+
+- name: Set boot order
+  when: "('BOOT_ORDER=' ~ rpi_eeprom_boot_order) not in rpi_eeprom_current.stdout_lines"
+  block:
+    - name: Write desired bootloader config
+      ansible.builtin.copy:
+        dest: /var/lib/rpi-eeprom-boot.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          {% for line in rpi_eeprom_current.stdout_lines if not line.startswith('BOOT_ORDER=') %}
+          {{ line }}
+          {% endfor %}
+          BOOT_ORDER={{ rpi_eeprom_boot_order }}
+
+    - name: Stage the bootloader update for next boot
+      ansible.builtin.command: rpi-eeprom-config --apply /var/lib/rpi-eeprom-boot.conf
+      changed_when: true
+      notify: Reboot node

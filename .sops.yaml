@@ -1,6 +1,8 @@
 # SOPS creation rules. Only the age PUBLIC key lives here; the private key is
 # kept off-repo (see docs/runbooks/secrets.md).
 creation_rules:
+  - path_regex: ^provision/.*\.sops\.ya?ml$
+    age: age1mnwnc5y06lkj4amzrl2sudc5lh2qeslv5554hets9lhyh320w5usgfkskc
   # Kubernetes Secrets: encrypt values only so diffs stay reviewable
   - path_regex: .*\.sops\.ya?ml$
     encrypted_regex: ^(data|stringData)$

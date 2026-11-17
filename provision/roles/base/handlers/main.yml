@@ -1,0 +1,30 @@
+---
+# Shared by every role. Roles notify this handler and the k3s role flushes
+# handlers once, so a single reboot covers all pending changes.
+#
+# A kernel update staged by piboot-try in /boot/firmware/new boots twice: the
+# first boot reboots straight into tryboot, and piboot-try-validate promotes
+# the new kernel once it comes up. The test command only passes after that
+# settles, so the play never continues on a node about to reboot again.
+- name: Reboot node
+  ansible.builtin.reboot:
+    reboot_timeout: 900
+    test_command: >-
+      sh -c '! grep -qxE "unknown|trying" /boot/firmware/new/state 2>/dev/null'
+
+- name: Read the A/B boot state
+  ansible.builtin.slurp:
+    src: /boot/firmware/new/state
+  register: base_tryboot_state
+  failed_when: false
+  listen: Reboot node
+
+- name: Fail if the new kernel did not boot
+  ansible.builtin.assert:
+    that: >-
+      base_tryboot_state.content is not defined
+      or (base_tryboot_state.content | b64decode | trim) != 'bad'
+    fail_msg: >-
+      The staged kernel in /boot/firmware/new failed to boot and the node fell
+      back to the previous one. Check `journalctl -b -1` on the node.
+  listen: Reboot node

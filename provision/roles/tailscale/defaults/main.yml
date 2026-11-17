@@ -1,0 +1,5 @@
+---
+tailscale_hostname: "{{ inventory_hostname }}"
+tailscale_repo_base: https://pkgs.tailscale.com/stable/ubuntu
+# Lives on tmpfs and only exists while `tailscale up` runs.
+tailscale_auth_key_path: /run/tailscale-auth-key

@@ -1,0 +1,14 @@
+---
+# In a dry run on a fresh node the generator install is only simulated, so
+# the unit can be missing. A real run still fails on any error.
+- name: Restart zram
+  ansible.builtin.systemd:
+    name: systemd-zram-setup@zram0.service
+    state: restarted
+    daemon_reload: true
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Restart journald
+  ansible.builtin.systemd:
+    name: systemd-journald
+    state: restarted

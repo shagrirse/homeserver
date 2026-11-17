@@ -1,0 +1,25 @@
+---
+# Tier 0: bring a freshly flashed Ubuntu Pi to a hardened k3s node.
+# Idempotent: safe to re-run, and the same run rebuilds a replacement node.
+- name: Provision homeserver node
+  hosts: homeserver
+  pre_tasks:
+    - name: Load SOPS-encrypted secrets
+      community.sops.load_vars:
+        file: "{{ playbook_dir }}/../secrets.sops.yaml"
+        expressions: ignore
+      no_log: true
+      tags: always
+  roles:
+    - role: base
+      tags: base
+    - role: rpi_eeprom
+      tags: eeprom
+    - role: storage_tuning
+      tags: storage
+    - role: tailscale
+      tags: tailscale
+    - role: hardening
+      tags: hardening
+    - role: k3s
+      tags: k3s

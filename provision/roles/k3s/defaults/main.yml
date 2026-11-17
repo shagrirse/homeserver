@@ -1,0 +1,16 @@
+---
+k3s_version: v1.36.6+k3s1
+# sha256 of install.sh at the k3s_version tag; update the two together:
+# curl -sfL https://raw.githubusercontent.com/k3s-io/k3s/<tag, + as %2B>/install.sh | sha256sum
+k3s_install_script_sha256: 46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad
+# Every PersistentVolume lives under this one path, so it is the only
+# directory to back up and restore.
+k3s_storage_path: /srv/k8s
+# Extra names for the API server certificate. k3s_api_host, when set in the
+# inventory, is added automatically.
+k3s_tls_san: []
+# Memory held back from pods on the 8GB node. Setting eviction-hard replaces
+# the kubelet defaults, so the disk thresholds are restated here.
+k3s_system_reserved_memory: 512Mi
+k3s_kube_reserved_memory: 768Mi
+k3s_eviction_hard: "memory.available<256Mi,nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<15%,imagefs.inodesFree<5%"

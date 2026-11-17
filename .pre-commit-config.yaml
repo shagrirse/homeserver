@@ -34,8 +34,9 @@ repos:
         entry: 'ENC\[AES256_GCM'
         args: [--negate]
         files: .+\.sops\.ya?ml$
-      - id: no-em-dash
-        name: no em dash (use a plain "-")
-        language: pygrep
-        entry: '\xe2\x80\x94'
-        types: [text]
+      - id: ansible-lint
+        name: ansible-lint
+        language: system
+        entry: bash -c 'cd provision && ansible-lint'
+        files: ^provision/
+        pass_filenames: false

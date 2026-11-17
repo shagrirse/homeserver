@@ -6,9 +6,9 @@
 ## Context
 
 The homeserver runs on a single Raspberry Pi 5 (8GB, arm64) with Ubuntu Server
-24.04 LTS. It boots from microSD today and will move to an SSD later. The
-repo should showcase real deployment practice, so workloads are declared and
-reproducible rather than hand-run containers. Memory is the main constraint.
+24.04 LTS, booting from microSD or an SSD. The repo should showcase real
+deployment practice, so workloads are declared and reproducible rather than
+hand-run containers. Memory is the main constraint.
 
 ## Decision
 
@@ -35,5 +35,5 @@ NVMe, USB, SD.
 - Single node means no high availability; recovery is rebuild-and-restore.
 - Everything except app data, the age key, the real inventory and the
   kubeconfig lives in git.
-- microSD wear is mitigated with noatime, zram and in-RAM journald until the
-  SSD arrives.
+- Disk wear, which matters most on microSD, is reduced with noatime, zram and
+  in-RAM journald.
