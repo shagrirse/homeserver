@@ -1,11 +1,10 @@
 ---
-- name: Remove the legacy one-line Tailscale source and its keyring
+# The keyring in /usr/share/keyrings belongs to the tailscale-archive-keyring
+# package and stays; the deb822 source below pins its own key.
+- name: Remove the legacy one-line Tailscale source
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: /etc/apt/sources.list.d/tailscale.list
     state: absent
-  loop:
-    - /etc/apt/sources.list.d/tailscale.list
-    - /usr/share/keyrings/tailscale-archive-keyring.gpg
 
 - name: Add Tailscale apt repository
   ansible.builtin.deb822_repository:
