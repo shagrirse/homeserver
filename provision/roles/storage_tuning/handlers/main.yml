@@ -1,9 +1,12 @@
 ---
+# A dry run does not install the generator, so the unit does not exist yet.
+# A real run still fails on any error.
 - name: Restart zram
   ansible.builtin.systemd:
     name: systemd-zram-setup@zram0.service
     state: restarted
     daemon_reload: true
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Restart journald
   ansible.builtin.systemd:
