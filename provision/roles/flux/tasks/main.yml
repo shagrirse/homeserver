@@ -1,0 +1,100 @@
+# Installs Flux: the two Secrets it needs, the Flux Operator as a k3s
+# HelmChart, and the FluxInstance from git on first install. After that the
+# FluxInstance syncs its own file, so git is its only owner. Secret values
+# reach kubectl over stdin and are never written to the node's disk.
+- name: Require the cluster age key and the deploy key
+  ansible.builtin.assert:
+    that:
+      - flux_age_key is defined and 'AGE-SECRET-KEY-' in flux_age_key
+      - flux_deploy_key is defined and flux_deploy_key is match('-----BEGIN OPENSSH')
+    fail_msg: flux_age_key or flux_deploy_key is missing from secrets.sops.yaml, see docs/runbooks/secrets.md.
+    quiet: true
+  no_log: true
+
+- name: Install the flux-system namespace and Secrets
+  ansible.builtin.command:
+    cmd: k3s kubectl apply -f -
+    stdin: "{{ flux_manifests | to_json }}"
+  vars:
+    flux_manifests:
+      apiVersion: v1
+      kind: List
+      items:
+        - apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: flux-system
+        - apiVersion: v1
+          kind: Secret
+          type: Opaque
+          metadata:
+            name: sops-age
+            namespace: flux-system
+          stringData:
+            age.agekey: "{{ flux_age_key }}"
+        - apiVersion: v1
+          kind: Secret
+          type: Opaque
+          metadata:
+            name: flux-system
+            namespace: flux-system
+          stringData:
+            identity: "{{ flux_deploy_key }}"
+            known_hosts: "{{ flux_github_known_hosts }}"
+  register: flux_secret_apply
+  # kubectl prints "<kind>/<name> unchanged" for each object it left alone.
+  changed_when: flux_secret_apply.stdout_lines | reject('search', ' unchanged$') | list | length > 0
+  no_log: true
+
+# k3s applies files in this directory and keeps the release in sync with
+# them, so the operator is upgraded by changing the defaults and re-running.
+- name: Install the Flux Operator
+  ansible.builtin.copy:
+    dest: /var/lib/rancher/k3s/server/manifests/flux-operator.yaml
+    owner: root
+    group: root
+    mode: "0600"
+    content: "{{ flux_operator_chart | to_nice_yaml(indent=2) }}"
+  vars:
+    flux_operator_chart:
+      apiVersion: helm.cattle.io/v1
+      kind: HelmChart
+      metadata:
+        name: flux-operator
+        namespace: kube-system
+      spec:
+        chart: oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator
+        version: "{{ flux_operator_version }}"
+        targetNamespace: flux-system
+        valuesContent: "{{ flux_operator_values | to_nice_yaml(indent=2) }}"
+    flux_operator_values:
+      image:
+        tag: "v{{ flux_operator_version }}@{{ flux_operator_image_digest }}"
+      # The status web UI is not exposed, so it is not run.
+      web:
+        enabled: false
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: null
+          memory: 256Mi
+
+- name: Wait for the FluxInstance API
+  ansible.builtin.command:
+    cmd: k3s kubectl wait --for=condition=Established crd/fluxinstances.fluxcd.controlplane.io --timeout=10s
+  register: flux_crd_wait
+  until: flux_crd_wait.rc == 0
+  retries: 30
+  delay: 10
+  changed_when: false
+
+# Created only when absent; after that, changes arrive through git.
+- name: Create the FluxInstance
+  ansible.builtin.command:
+    cmd: k3s kubectl create -f -
+    stdin: "{{ lookup('ansible.builtin.file', playbook_dir ~ '/../../kubernetes/cluster/flux-system/flux-instance.yaml') }}"
+  register: flux_instance_create
+  changed_when: flux_instance_create.rc == 0
+  failed_when: flux_instance_create.rc != 0 and 'AlreadyExists' not in flux_instance_create.stderr

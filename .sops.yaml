@@ -1,9 +1,13 @@
-# SOPS creation rules. Only the age PUBLIC key lives here; the private key is
+# SOPS creation rules. Only age PUBLIC keys live here; the private keys are
 # kept off-repo (see docs/runbooks/secrets.md).
 creation_rules:
+  # Node secrets: personal key only, so the cluster cannot read them.
   - path_regex: ^provision/.*\.sops\.ya?ml$
     age: age1mnwnc5y06lkj4amzrl2sudc5lh2qeslv5554hets9lhyh320w5usgfkskc
-  # Kubernetes Secrets: encrypt values only so diffs stay reviewable
-  - path_regex: .*\.sops\.ya?ml$
+  # Kubernetes Secrets: personal key plus the cluster key Flux decrypts with.
+  # Values only, so diffs stay reviewable.
+  - path_regex: ^kubernetes/.*\.sops\.ya?ml$
     encrypted_regex: ^(data|stringData)$
-    age: age1mnwnc5y06lkj4amzrl2sudc5lh2qeslv5554hets9lhyh320w5usgfkskc
+    age: >-
+      age1mnwnc5y06lkj4amzrl2sudc5lh2qeslv5554hets9lhyh320w5usgfkskc,
+      age1drlfd6xa7lhmjg5r7cmwgsh4xghjt54z5e79mufy593mjntr35sq0fxz32

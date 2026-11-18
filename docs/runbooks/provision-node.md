@@ -3,8 +3,8 @@
 Takes a freshly flashed Raspberry Pi 5 to a hardened single-node k3s host. The
 same procedure rebuilds a dead node and moves from microSD to an SSD.
 
-This runbook ends at a `Ready` node. Bootstrapping Flux, recreating the age key
-secret and restoring volumes into the cluster are outside its scope.
+This runbook ends at a `Ready` node with Flux syncing `main`. Restoring
+volumes into the cluster is outside its scope.
 
 ## What the playbook does
 
@@ -16,6 +16,7 @@ secret and restoring volumes into the cluster are outside its scope.
 | `tailscale` | Installs Tailscale and joins the tailnet |
 | `hardening` | Key-only SSH, ufw deny-by-default (SSH from the LAN, everything on `tailscale0`) |
 | `k3s` | Checks memory cgroups, k3s without Traefik, memory reserved for the host, volumes under `/srv/k8s` |
+| `flux` | The cluster age key and the deploy key as Secrets, the Flux Operator, and the `FluxInstance` from git on first install, see [maintain-flux.md](maintain-flux.md) |
 
 No ports are opened to the internet. Public apps go out through a Cloudflare
 Tunnel and private apps over Tailscale.
@@ -48,7 +49,8 @@ The Tailscale auth key comes from the Tailscale admin console (a one-off,
 non-ephemeral key). It is used once, when the node joins; every fresh flash
 needs a new key, see [Rebuild the node](#rebuild-the-node). After the node
 joins, disable key expiry for it in the admin console, otherwise it drops off
-the tailnet after about 180 days. The age key is described in
+the tailnet after about 180 days. The age keys, including the cluster key
+in `flux_age_key`, and the deploy key in `flux_deploy_key` are described in
 [secrets.md](secrets.md).
 
 ## Flash
@@ -73,6 +75,16 @@ kubectl --kubeconfig ~/.kube/homeserver.yaml get nodes
 The node should report `Ready`. Re-running `just provision` changes nothing
 when the node already matches.
 
+Run it from an up-to-date `main`: on a new node the `FluxInstance` is created
+from the checked-out `kubernetes/cluster/flux-system/flux-instance.yaml`, and
+after that Flux syncs `main`. Then check that Flux is up:
+
+```sh
+export KUBECONFIG=~/.kube/homeserver.yaml
+kubectl -n flux-system get fluxinstance flux   # Ready
+flux get all -A                                # every source and Kustomization Ready
+```
+
 On a freshly flashed node the dry run reports the Tailscale install and
 service, the zram restart and the k3s service as ignored errors, because check
 mode only simulates the installs they depend on. The real run installs them.
@@ -91,7 +103,7 @@ machine to Tailscale and to SSH:
 4. Flash the boot disk and boot as above.
 5. Forget the old SSH host key, otherwise Ansible refuses to connect:
    `ssh-keygen -R <address>`.
-6. Run the steps above and verify the node reports `Ready`.
+6. Run the steps above and verify the node and Flux report `Ready`.
 7. Disable key expiry for the new machine in the Tailscale admin console. It is
    a new identity, so the setting from the old machine does not carry over.
 

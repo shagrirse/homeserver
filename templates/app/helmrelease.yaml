@@ -13,6 +13,7 @@ spec:
         kind: HelmRepository
         name: CHART_REPO
         namespace: flux-system
+  # Define liveness and readiness probes per the chart's values.
   values:
     # Pin images by arm64-capable digest.
     image:
@@ -24,4 +25,3 @@ spec:
         memory: 64Mi
       limits:
         memory: 256Mi
-    # Define liveness and readiness probes per the chart's values.

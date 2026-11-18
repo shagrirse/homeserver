@@ -1,0 +1,45 @@
+# The Flux installation, rendered and kept in sync by the Flux Operator. The
+# operator itself and the two Secrets referenced here are installed by the
+# `flux` Ansible role; see docs/runbooks/maintain-flux.md.
+apiVersion: fluxcd.controlplane.io/v1
+kind: FluxInstance
+metadata:
+  # The operator only reconciles an instance named `flux`.
+  name: flux
+  namespace: flux-system
+spec:
+  distribution:
+    # An exact version: the operator then pins every controller image by the
+    # digest it ships for that release.
+    version: "2.10.0"
+    registry: ghcr.io/fluxcd
+  components:
+    - source-controller
+    - kustomize-controller
+    - helm-controller
+    - notification-controller
+  cluster:
+    type: kubernetes
+    # Concurrency 5 and 512Mi limits, the operator's profile for edge nodes.
+    size: small
+    networkPolicy: true
+  sync:
+    kind: GitRepository
+    url: ssh://git@github.com/shagrirse/homeserver.git
+    ref: refs/heads/main
+    path: kubernetes/cluster
+    # Read-only deploy key and GitHub's host keys.
+    pullSecret: flux-system
+  kustomize:
+    patches:
+      # Decrypt *.sops.yaml with the cluster age key in the sops-age Secret.
+      - target:
+          kind: Kustomization
+          name: flux-system
+        patch: |
+          - op: add
+            path: /spec/decryption
+            value:
+              provider: sops
+              secretRef:
+                name: sops-age

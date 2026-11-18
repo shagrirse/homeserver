@@ -23,3 +23,5 @@
       tags: hardening
     - role: k3s
       tags: k3s
+    - role: flux
+      tags: flux
