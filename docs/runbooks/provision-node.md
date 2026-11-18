@@ -53,6 +53,13 @@ the tailnet after about 180 days. The age keys, including the cluster key
 in `flux_age_key`, and the deploy key in `flux_deploy_key` are described in
 [secrets.md](secrets.md).
 
+Before the first run, add the SSH rule from
+[ADR 0007](../adr/0007-tailscale-ssh.md) to the tailnet policy. Once the node
+runs Tailscale SSH, every login over its Tailscale name, Ansible's included,
+is allowed or denied by that rule. With the default `check` rule Ansible
+waits on a browser prompt; with no rule it is denied. The LAN address still
+reaches OpenSSH with your key.
+
 ## Flash
 
 1. Flash Ubuntu Server 26.04 LTS (arm64, Raspberry Pi preinstalled image) to

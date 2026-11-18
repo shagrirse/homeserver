@@ -12,3 +12,4 @@ link to their replacement.
 | [0004](0004-cluster-age-key.md) | A dedicated age key for the cluster, installed by provisioning | Accepted |
 | [0005](0005-flux-operator.md) | Flux installed by the Flux Operator | Accepted |
 | [0006](0006-usb-nvme-boot-disk.md) | NVMe SSD over USB as the boot disk | Accepted |
+| [0007](0007-tailscale-ssh.md) | Tailscale SSH for remote shell access | Accepted |
