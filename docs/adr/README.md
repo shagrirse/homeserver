@@ -11,3 +11,4 @@ link to their replacement.
 | [0003](0003-ubuntu-26-04-host-os.md) | Ubuntu Server 26.04 LTS as the host OS | Accepted |
 | [0004](0004-cluster-age-key.md) | A dedicated age key for the cluster, installed by provisioning | Accepted |
 | [0005](0005-flux-operator.md) | Flux installed by the Flux Operator | Accepted |
+| [0006](0006-usb-nvme-boot-disk.md) | NVMe SSD over USB as the boot disk | Accepted |
