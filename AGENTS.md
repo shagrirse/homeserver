@@ -26,10 +26,11 @@ CLAUDE.md only imports it.
 
 | Path | Purpose |
 | --- | --- |
-| `provision/` | Tier 0: Ansible for the Pi (OS, k3s) |
+| `provision/` | Tier 0: Ansible for the Pi (OS, k3s, Flux install) |
+| `kubernetes/cluster/` | Flux entry point; `flux-system/flux-instance.yaml` defines Flux itself |
 | `templates/app/` | Skeleton for an app under `kubernetes/apps/<app>/` |
 | `docs/adr/` | Decision records; add one for any architectural choice |
-| `docs/runbooks/` | Operational procedures (secrets, provisioning, kernel updates) |
+| `docs/runbooks/` | Operational procedures (secrets, provisioning, Flux, kernel updates) |
 | `.claude/` | Agent permissions and hooks |
 
 ## App contract
@@ -50,5 +51,6 @@ probes, and is exposed only through a shared Traefik route. Start from
 ## Docs
 
 Secrets handling: [docs/runbooks/secrets.md](docs/runbooks/secrets.md).
+Flux upgrades and removal: [docs/runbooks/maintain-flux.md](docs/runbooks/maintain-flux.md).
 Kernel updates: [docs/runbooks/kernel-updates.md](docs/runbooks/kernel-updates.md).
 Decisions: [docs/adr/](docs/adr/README.md).

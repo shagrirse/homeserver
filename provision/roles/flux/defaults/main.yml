@@ -1,0 +1,9 @@
+# Flux Operator release; bump the chart version and image digest together:
+# docker buildx imagetools inspect ghcr.io/controlplaneio-fluxcd/flux-operator:v<version>
+flux_operator_version: 0.62.1
+flux_operator_image_digest: sha256:1d09a3f96524d0895fb11e8072d84a3dd029cecdec0f869efa371be6b001469c
+
+# GitHub's ed25519 SSH host key, from https://api.github.com/meta (ssh_keys).
+# Flux only offers the host key algorithms listed here.
+flux_github_known_hosts: |
+  github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
