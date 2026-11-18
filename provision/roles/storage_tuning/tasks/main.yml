@@ -5,7 +5,8 @@
     src: "{{ storage_tuning_root_source }}"
     fstype: "{{ storage_tuning_root_fstype }}"
     # errors=remount-ro stops writes after a filesystem error, as Ubuntu's
-    # stock entry does. TRIM runs weekly through fstrim.timer.
+    # stock entry does. TRIM runs weekly through fstrim.timer; a USB SSD
+    # needs the udev rule below for it to reach the disk.
     opts: defaults,noatime,errors=remount-ro
     dump: "0"
     passno: "1"
@@ -48,3 +49,17 @@
       Storage=volatile
       RuntimeMaxUse={{ storage_tuning_journal_max_use }}
   notify: Restart journald
+
+- name: Enable TRIM on USB SSD enclosures
+  ansible.builtin.copy:
+    dest: /etc/udev/rules.d/60-usb-ssd-trim.rules
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      {% for bridge in storage_tuning_trim_usb_bridges %}
+      ACTION=="add|change", SUBSYSTEM=="scsi_disk", \
+        ATTRS{idVendor}=="{{ bridge.vendor }}", ATTRS{idProduct}=="{{ bridge.product }}", \
+        ATTR{provisioning_mode}="unmap"
+      {% endfor %}
+  notify: Apply udev rules

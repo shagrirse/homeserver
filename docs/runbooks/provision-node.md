@@ -12,7 +12,7 @@ volumes into the cluster is outside its scope.
 | --- | --- |
 | `base` | Hostname, timezone, apt upgrade, automatic security updates (kernels need a manual reboot, see [kernel-updates.md](kernel-updates.md)) |
 | `rpi_eeprom` | Boot order NVMe, then USB, then SD |
-| `storage_tuning` | `noatime` root, zram swap, journal kept in RAM |
+| `storage_tuning` | `noatime` root, zram swap, journal kept in RAM, TRIM on USB SSDs |
 | `tailscale` | Installs Tailscale and joins the tailnet |
 | `hardening` | Key-only SSH, ufw deny-by-default (SSH from the LAN, everything on `tailscale0`) |
 | `k3s` | Checks memory cgroups, k3s without Traefik, memory reserved for the host, volumes under `/srv/k8s` |
@@ -127,3 +127,31 @@ Hardware notes, both in `/boot/firmware/config.txt`:
 - A PCIe NVMe HAT may need `dtparam=pciex1`.
 - Booting from a USB SSD on a power supply other than the official 27W one may
   need `usb_max_current_enable=1`.
+
+### Checking a USB SSD
+
+A USB enclosure connects with a USB 3 rated USB-C to USB-A cable to a blue USB
+3 port, with no hub, see [ADR 0006](../adr/0006-usb-nvme-boot-disk.md). After
+the first boot from the SSD:
+
+```sh
+findmnt /                       # root is on /dev/sda2, not /dev/mmcblk0p2
+lsusb                           # names the bridge chip (Realtek, ASMedia or JMicron)
+lsusb -t                        # the enclosure shows Driver=uas and 5000M
+lsblk -D /dev/sda               # DISC-GRAN and DISC-MAX non-zero, so TRIM works
+sudo fstrim -v /                # reports bytes trimmed, not an error
+vcgencmd get_throttled          # throttled=0x0, so power is sufficient
+sudo dmesg | grep -iE 'uas_eh|reset SuperSpeed|offline|I/O error'   # no output
+```
+
+- `480M` in `lsusb -t` means a USB 2 cable or port.
+- `Driver=usb-storage` instead of `uas` means the kernel disabled UAS for the
+  bridge chip, which is slower and points to a JMicron bridge.
+- Zero discard values mean TRIM is off for the enclosure. The
+  `storage_tuning` role turns it on with a udev rule for the bridges listed in
+  `storage_tuning_trim_usb_bridges`. For a new enclosure, test with
+  `echo unmap | sudo tee /sys/block/sda/device/scsi_disk/*/provisioning_mode`
+  and `sudo fstrim -v /`, then add its `lsusb` ID to that list.
+
+Run the `dmesg` check again after a few days of normal load. Repeated resets
+point to the bridge chip, power or cable.

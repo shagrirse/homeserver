@@ -12,3 +12,7 @@
   ansible.builtin.systemd:
     name: systemd-journald
     state: restarted
+
+- name: Apply udev rules
+  ansible.builtin.shell: udevadm control --reload && udevadm trigger --subsystem-match=scsi_disk --action=change
+  changed_when: true
