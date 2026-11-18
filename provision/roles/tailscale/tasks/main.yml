@@ -71,6 +71,7 @@
           - up
           - "--hostname={{ tailscale_hostname }}"
           - "--auth-key=file:{{ tailscale_auth_key_path }}"
+          - --ssh
       changed_when: true
 
   always:
@@ -89,3 +90,62 @@
     - tailscale_state.BackendState | default('') == 'Running'
     - tailscale_state.Self.HostName | default('') != tailscale_hostname
   changed_when: true
+
+- name: Read Tailscale prefs
+  ansible.builtin.command: tailscale debug prefs
+  register: tailscale_prefs
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+# Tailscale SSH lets tailnet devices log in by tailnet identity, with access
+# decided by the tailnet policy (docs/adr/0007-tailscale-ssh.md).
+- name: Enable Tailscale SSH
+  when:
+    - tailscale_state.BackendState | default('') == 'Running'
+    - not (tailscale_prefs.stdout | default('{}', true) | from_json).RunSSH | default(false)
+  block:
+    # Switching drops open OpenSSH sessions over the tailnet, Ansible's own
+    # included, so the command runs detached instead of waiting for a reply.
+    # --accept-risk skips the CLI's warning pause.
+    - name: Turn on Tailscale SSH
+      ansible.builtin.command:
+        argv:
+          - tailscale
+          - set
+          - --ssh
+          - --accept-risk=lose-ssh
+      async: 30
+      poll: 0
+      changed_when: true
+
+# reset_connection ignores conditions, so it runs on every pass; reconnecting
+# is cheap.
+- name: Reconnect to the node
+  ansible.builtin.meta: reset_connection
+
+# The delay gives the detached switch time to land before reconnecting.
+- name: Wait for the node to accept connections
+  ansible.builtin.wait_for_connection:
+    delay: 5
+    timeout: 60
+
+# A dry run on a fresh node has no tailscale binary yet, so this only runs
+# for real. Retries cover a switch that is still being applied.
+- name: Wait for Tailscale SSH
+  ansible.builtin.command: tailscale debug prefs
+  register: tailscale_prefs_after
+  changed_when: false
+  failed_when: false
+  until: (tailscale_prefs_after.stdout | default('{}', true) | from_json).RunSSH | default(false)
+  retries: 10
+  delay: 3
+  when: not ansible_check_mode
+
+- name: Require Tailscale SSH
+  ansible.builtin.assert:
+    that: (tailscale_prefs_after.stdout | default('{}', true) | from_json).RunSSH | default(false)
+    fail_msg: >-
+      Tailscale SSH is off. Check that tailscaled is running and that
+      `tailscale set --ssh` works on the node.
+  when: not ansible_check_mode
