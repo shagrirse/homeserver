@@ -58,7 +58,7 @@ the fallback when Tailscale is unavailable.
   promptly.
 - Tagging the node takes it out of `autogroup:self`, so the rule would need
   the tag as its destination.
-- The policy rule lives in the Tailscale admin console until the tailnet
-  policy is managed as code.
+- The policy rule lives in `tailscale/policy.hujson`
+  ([ADR 0008](0008-tailscale-policy-as-code.md)).
 - Reopen if shell access is needed for people outside the tailnet owner's
   account, or if Tailscale becomes unavailable for long periods.

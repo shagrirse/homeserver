@@ -1,0 +1,21 @@
+// Tailnet policy file, applied to Tailscale by
+// .github/workflows/tailscale-policy.yaml. Edits in the admin console are
+// rejected on the next apply; change this file instead.
+// See docs/runbooks/tailscale-policy.md.
+{
+	// Every tailnet device can reach every other device.
+	"grants": [
+		{"src": ["*"], "dst": ["*"], "ip": ["*"]},
+	],
+
+	// Tailscale SSH: a member's own devices accept logins as any non-root
+	// user, without re-authentication (ADR 0007).
+	"ssh": [
+		{
+			"action": "accept",
+			"src":    ["autogroup:member"],
+			"dst":    ["autogroup:self"],
+			"users":  ["autogroup:nonroot"],
+		},
+	],
+}
