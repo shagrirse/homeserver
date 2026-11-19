@@ -13,8 +13,8 @@ Ingress for the cluster, configured through the Gateway API only. Decision:
 
 ## Exposing an app
 
-Attach an HTTPRoute in the app's namespace to the `https` listener. The
-wildcard certificate already covers the hostname:
+Attach an HTTPRoute in the app's namespace to the `https` listener, or to
+`https-apex` for the bare domain. The certificate already covers both:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1

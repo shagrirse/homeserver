@@ -1,5 +1,7 @@
 # The shared entry point. Apps attach an HTTPRoute from their own namespace
-# to the `https` listener; the `http` listener only redirects.
+# to the `https` listener (subdomains) or `https-apex` (the bare domain).
+# The `http` listener has no hostname, so every plain-HTTP request is
+# redirected to HTTPS.
 # Listener ports are Traefik's entrypoint ports (web 8000, websecure 8443),
 # which the Service exposes as 80 and 443.
 apiVersion: gateway.networking.k8s.io/v1
@@ -12,7 +14,6 @@ spec:
     - name: http
       protocol: HTTP
       port: 8000
-      hostname: "*.${DOMAIN}"
       allowedRoutes:
         namespaces:
           from: Same
@@ -20,6 +21,17 @@ spec:
       protocol: HTTPS
       port: 8443
       hostname: "*.${DOMAIN}"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-apex
+      protocol: HTTPS
+      port: 8443
+      hostname: ${DOMAIN}
       tls:
         mode: Terminate
         certificateRefs:
