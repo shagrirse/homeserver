@@ -9,6 +9,10 @@ k3s_storage_path: /srv/k8s
 # Extra names for the API server certificate. k3s_api_host, when set in the
 # inventory, is added automatically.
 k3s_tls_san: []
+# Addresses NodePorts listen on: the Tailscale range and loopback.
+k3s_nodeport_addresses:
+  - 100.64.0.0/10
+  - 127.0.0.1/32
 # Memory held back from pods on the 8GB node. Setting eviction-hard replaces
 # the kubelet defaults, so the disk thresholds are restated here.
 k3s_system_reserved_memory: 512Mi
