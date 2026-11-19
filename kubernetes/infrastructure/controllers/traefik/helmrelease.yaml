@@ -1,0 +1,55 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: traefik
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    image:
+      registry: docker.io
+      repository: traefik
+      tag: v3.7.19
+      digest: sha256:a6c0194dda77bcb804824580f36fa7edc56e315b1acfe933366c8b52844a78a4
+    deployment:
+      replicas: 1
+    # Routing is Gateway API only. The CRD provider stays on for Middleware.
+    providers:
+      kubernetesGateway:
+        enabled: true
+      kubernetesCRD:
+        enabled: true
+      kubernetesIngress:
+        enabled: false
+    # The GatewayClass comes from the chart; the Gateway lives in
+    # infrastructure/configs so it can reference the wildcard certificate.
+    gatewayClass:
+      enabled: true
+      name: traefik
+    gateway:
+      enabled: false
+    ingressRoute:
+      dashboard:
+        enabled: false
+    log:
+      format: json
+    accessLog:
+      enabled: true
+      format: json
+    # k3s ServiceLB binds 80 and 443 on the node; ufw admits them only from
+    # the tailnet.
+    service:
+      spec:
+        type: LoadBalancer
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi

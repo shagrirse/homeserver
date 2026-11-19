@@ -77,4 +77,8 @@ Flux pulls this repo over SSH with a read-only deploy key named
 sops kubernetes/apps/<app>/secret.sops.yaml   # edit in place, re-encrypts on save
 ```
 
+Values that apply cluster-wide and must stay out of git, such as the domain,
+live in `kubernetes/cluster/cluster-settings.sops.yaml`. Flux substitutes them
+into manifests that say `${DOMAIN}`. Edit them the same way.
+
 Never run `sops -d` to stdout in a shared terminal or agent session.
