@@ -7,6 +7,11 @@ disable:
   - traefik
 # Keep memory back for the OS (sshd, tailscaled) and k3s itself, so
 # workloads are evicted before the node becomes unreachable.
+# NodePorts listen only on tailnet and loopback addresses. kube-proxy's
+# forwarding bypasses ufw's incoming rules, so this is what keeps them off
+# the LAN.
+kube-proxy-arg:
+  - "nodeport-addresses={{ k3s_nodeport_addresses | join(',') }}"
 kubelet-arg:
   - "system-reserved=memory={{ k3s_system_reserved_memory }}"
   - "kube-reserved=memory={{ k3s_kube_reserved_memory }}"

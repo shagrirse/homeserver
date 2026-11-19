@@ -6,7 +6,8 @@
 ## Context
 
 Apps need HTTPS hostnames with publicly trusted certificates. The node has
-no open ports to the internet: ufw admits only the tailnet, and public
+no open ports to the internet: ufw admits host services only from the
+tailnet, and public
 traffic arrives through an outbound tunnel. The real domain must not appear
 in git. Memory is tight, so the platform should run few, small pods.
 
@@ -24,8 +25,10 @@ in git. Memory is tight, so the platform should run few, small pods.
   controllers, then the resources the controllers own.
 - The domain and ACME email live in the encrypted `cluster-settings` Secret
   and are filled into manifests by Flux `postBuild` substitution.
-- Traefik's Service uses k3s ServiceLB, so 80 and 443 bind on the node and
-  the existing ufw rules keep them tailnet-only.
+- Traefik's Service uses k3s ServiceLB, so 80 and 443 bind on the node.
+  ServiceLB's forwarding bypasses ufw's incoming rules, so the Service's
+  `loadBalancerSourceRanges` admits only the Tailscale range, and kube-proxy
+  serves NodePorts only on tailnet and loopback addresses.
 
 ## Alternatives considered
 
@@ -47,3 +50,6 @@ in git. Memory is tight, so the platform should run few, small pods.
   exposes all hostnames, so it never leaves the `traefik` namespace.
 - A Traefik upgrade may require a matching Gateway API CRD bump.
 - Moving DNS off Cloudflare means changing the DNS-01 solver.
+- ServiceLB masquerades connections, so Traefik never sees the client IP.
+  Needing it, for logs or IP allow lists, would reopen how Traefik is
+  exposed (for example hostPort instead of ServiceLB).

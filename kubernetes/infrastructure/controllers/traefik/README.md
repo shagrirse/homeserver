@@ -7,7 +7,17 @@ Ingress for the cluster, configured through the Gateway API only. Decision:
   Gateway `main`, the wildcard Certificate and the HTTP-to-HTTPS redirect
   live in [configs/traefik](../../configs/traefik/).
 - The Service is a LoadBalancer served by k3s ServiceLB, which binds 80 and
-  443 on the node. ufw admits them only on `tailscale0`.
+  443 on every node address. ServiceLB forwards around ufw's incoming rules,
+  so `loadBalancerSourceRanges` limits clients to the Tailscale range
+  (`100.64.0.0/10`). The Service's NodePorts are kept off the LAN by the
+  k3s `nodeport-addresses` setting in `provision/`.
+- ServiceLB masquerades every connection, so access logs show its pod
+  address, not the client's.
+- Pods cannot reach apps through the public hostname, because their
+  addresses are outside the allowed range. Call the app's Service by its
+  cluster DNS name instead.
+- Only IPv4 is served. Publish `A` records for the domain, never `AAAA`:
+  tailnet clients prefer IPv6 and would fail to connect.
 - The Ingress provider is off. The CRD provider is on for `Middleware`.
 - Access logs are JSON on stdout. The dashboard is not exposed.
 
