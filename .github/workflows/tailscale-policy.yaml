@@ -1,0 +1,53 @@
+# Tests tailscale/policy.hujson on pull requests and applies it on main.
+# Authenticates with a Tailscale federated identity (GitHub OIDC), so no
+# long-lived Tailscale credential is stored. See
+# docs/runbooks/tailscale-policy.md.
+name: Tailscale policy
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - tailscale/policy.hujson
+      - .github/workflows/tailscale-policy.yaml
+  pull_request:
+    branches: [main]
+    paths:
+      - tailscale/policy.hujson
+      - .github/workflows/tailscale-policy.yaml
+
+permissions: {}
+
+concurrency:
+  group: tailscale-policy-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Holds the ETag of the last applied policy, so an apply fails instead
+      # of overwriting edits made in the admin console since then.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ./version-cache.json
+          key: tailscale-version-cache-${{ github.run_id }}
+          restore-keys: tailscale-version-cache-
+
+      - uses: tailscale/gitops-acl-action@5a4a17f5708e9bf96f4ee915a95e9f83c2eebe1a  # v1.5.2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          # "-" is the tailnet the federated identity belongs to, which keeps
+          # the tailnet name out of the repo and the logs.
+          tailnet: "-"
+          policy-file: tailscale/policy.hujson
+          action: ${{ github.event_name == 'push' && 'apply' || 'test' }}
