@@ -8,7 +8,7 @@ spec:
   secretName: wildcard-tls
   issuerRef:
     kind: ClusterIssuer
-    name: letsencrypt-staging
+    name: letsencrypt-production
   dnsNames:
     - ${DOMAIN}
     - "*.${DOMAIN}"

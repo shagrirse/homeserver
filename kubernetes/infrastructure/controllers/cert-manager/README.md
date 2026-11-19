@@ -6,9 +6,9 @@ Decision: [ADR 0009](../../../../docs/adr/0009-ingress-and-tls.md).
 - ClusterIssuers `letsencrypt-staging` and `letsencrypt-production` live in
   [configs/cert-manager](../../configs/cert-manager/). The one wildcard
   Certificate lives in [configs/traefik](../../configs/traefik/).
-- The wildcard Certificate is issued by `letsencrypt-staging`, which browsers
-  do not trust. To serve a trusted certificate, set its `issuerRef.name` to
-  `letsencrypt-production`; cert-manager reissues it on the next reconcile.
+- The wildcard Certificate is issued by `letsencrypt-production`. Point its
+  `issuerRef.name` at `letsencrypt-staging` while debugging issuance, to stay
+  clear of production rate limits.
 - `secret.sops.yaml` holds a Cloudflare API token with Zone:DNS:Edit on the
   one zone. Edit it with `sops`.
 - Propagation checks use 1.1.1.1 and 1.0.0.1 rather than the node's resolver.
