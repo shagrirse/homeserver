@@ -15,7 +15,10 @@
 1. In the Tailscale admin console, under **Settings > Trust credentials**,
    create a federated identity:
    - Issuer: GitHub, `https://token.actions.githubusercontent.com`
-   - Subject: `repo:<owner>/<repo>:*`
+   - Subject: `repo:<owner>@<owner-id>/<repo>@<repo-id>:*`. GitHub puts the
+     numeric account and repository IDs in this repository's OIDC subject;
+     print them with
+     `gh api repos/<owner>/<repo> --jq '"\(.owner.id) \(.id)"'`.
    - Scopes: **Custom scopes**, then **Policy File** set to write. Leave
      every other scope off.
 2. Add the identity's client ID and audience as repository Actions secrets:
