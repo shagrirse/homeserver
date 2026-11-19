@@ -1,0 +1,35 @@
+# Cluster-wide values substituted into manifests by Flux postBuild. Edit with
+# `sops kubernetes/cluster/cluster-settings.sops.yaml`.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: cluster-settings
+    namespace: flux-system
+type: Opaque
+stringData:
+    DOMAIN: ENC[AES256_GCM,data:9uvjQKG4SnSpguU=,iv:3x9BDATsgMClwWggxE2lx2/VEmPtLUfDCgnw4gRTm2E=,tag:OxHlQsR7cSTySG2x1QizhQ==,type:str]
+    ACME_EMAIL: ENC[AES256_GCM,data:rbef1XO8f+MYLeeTKev6nJ0=,iv:v2eNu3VVQdNnYQ1xUEwFCoE4pZ2tizvOigpFUXhSmQs=,tag:UJeWSRDuWfy9nGDBU1QxGw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBsVW10MEpQM3lxY2wvb0Fw
+            VlZBZ0g3RnRQbkhHb1dUL3RvZVM2OEtLd2xBCm9NZWZCbVVWTDU3eUpPTy85RDM5
+            TjNmdWloMTh6UW12U2FwY3YyeERrUVUKLS0tIDd5UzBvMGwyKzNLYXcrZVVBZzNZ
+            enRaSmN0Wk9KbklYZlJzTDZwZFNYcVkKhpqjtotmSwjo5hAxBqELVHzlWhckGhF4
+            n5dllFqKJ7UTVdKJdsrWDf1wO/mqPBMH2XswvMI++T6jClOSFNHYxg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1mnwnc5y06lkj4amzrl2sudc5lh2qeslv5554hets9lhyh320w5usgfkskc
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBDbTFEam9MNnB3TkMzazBm
+            UStXV1dPT0ZObGZZOExCNGFPYmtKRFRzbzNBCnl4TURtZFFNTDBMcnVsYi9FbTVu
+            WkZ2aGFscUl1d01vR3c5Zm8rcVMvQnMKLS0tIHZWR0p4YmZvWEEwMWlkVG5JME5Z
+            cEp1Y0dqRUJrYnVnUkEybFZaMHY0OHcKb7lAX4bhDxzxSV0EeBzR0shry/Krnc1o
+            AyUpWeDm9M9hXubcF/qnQCwot+cAFdj/S49IK3Fe7WpJNnsUHC7zQw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1drlfd6xa7lhmjg5r7cmwgsh4xghjt54z5e79mufy593mjntr35sq0fxz32
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-11-19T16:56:17Z"
+    mac: ENC[AES256_GCM,data:gMXRdMDN0ZXrVishga4qJB39t2C/7K4LklvUKHDLtMr7dBu+7zikr+cVpV6c+SKva2gmBKRbVwNF0eizN7Hkjv/nMbEVAvjAhQ/xiGAerg49wUw7gMEHGiW6I+z5ZTwr4vOZTWKoFUshdQRZ5l9Jo5REyErqmslGmWdlqvXucIc=,iv:4UyGD0MADexU/54omHdZwbeklvuEecArhrBHn5GeVzI=,tag:UGZSvmhWFQzkII/JLDzAqQ==,type:str]
+    version: 3.13.3

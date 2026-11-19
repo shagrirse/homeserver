@@ -27,7 +27,8 @@ CLAUDE.md only imports it.
 | Path | Purpose |
 | --- | --- |
 | `provision/` | Tier 0: Ansible for the Pi (OS, k3s, Flux install) |
-| `kubernetes/cluster/` | Flux entry point; `flux-system/flux-instance.yaml` defines Flux itself |
+| `kubernetes/cluster/` | Flux entry point; `flux-system/flux-instance.yaml` defines Flux itself, `infrastructure.yaml` orders the platform layers |
+| `kubernetes/infrastructure/` | Platform: `controllers/` (Traefik, cert-manager), then `configs/` (Gateway, issuers, wildcard cert) |
 | `tailscale/` | Tailnet policy file, applied by `.github/workflows/` |
 | `templates/app/` | Skeleton for an app under `kubernetes/apps/<app>/` |
 | `docs/adr/` | Decision records; add one for any architectural choice |
@@ -39,7 +40,8 @@ CLAUDE.md only imports it.
 Each app under `kubernetes/apps/<app>/` has `kustomization.yaml`, a
 `helmrelease.yaml` or plain manifests, `secret.sops.yaml` if it needs secrets,
 and a `README.md`. It owns its namespace, sets requests and limits, defines
-probes, and is exposed only through a shared Traefik route. Start from
+probes, and is exposed only through an HTTPRoute on the shared Gateway (see
+[Traefik](kubernetes/infrastructure/controllers/traefik/README.md)). Start from
 `templates/app/`.
 
 ## Commands

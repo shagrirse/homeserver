@@ -14,3 +14,4 @@ link to their replacement.
 | [0006](0006-usb-nvme-boot-disk.md) | NVMe SSD over USB as the boot disk | Accepted |
 | [0007](0007-tailscale-ssh.md) | Tailscale SSH for remote shell access | Accepted |
 | [0008](0008-tailscale-policy-as-code.md) | Tailnet policy managed from git | Accepted |
+| [0009](0009-ingress-and-tls.md) | Traefik on the Gateway API with a cert-manager wildcard certificate | Accepted |

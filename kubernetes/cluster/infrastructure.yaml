@@ -1,0 +1,78 @@
+# Platform layers, applied in order on a fresh node: Gateway API CRDs, then
+# the controllers that serve them, then the custom resources those
+# controllers own.
+---
+# Upstream Gateway API CRDs at the release Traefik supports. Kept apart from
+# any chart so Helm never owns, or silently stops upgrading, them.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: gateway-api
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://github.com/kubernetes-sigs/gateway-api
+  ref:
+    tag: v1.6.3
+  ignore: |
+    /*
+    !/config/crd/standard/
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gateway-api
+  namespace: flux-system
+spec:
+  interval: 1h
+  sourceRef:
+    kind: GitRepository
+    name: gateway-api
+  path: ./config/crd/standard
+  prune: false
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infra-controllers
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: gateway-api
+  interval: 1h
+  retryInterval: 2m
+  timeout: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./kubernetes/infrastructure/controllers
+  prune: true
+  wait: true
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infra-configs
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: infra-controllers
+  interval: 1h
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./kubernetes/infrastructure/configs
+  prune: true
+  wait: true
+  # Manifests say ${DOMAIN} and ${ACME_EMAIL}; the values live encrypted in
+  # cluster-settings.sops.yaml.
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: cluster-settings
