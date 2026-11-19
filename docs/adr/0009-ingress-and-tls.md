@@ -24,8 +24,10 @@ in git. Memory is tight, so the platform should run few, small pods.
   controllers, then the resources the controllers own.
 - The domain and ACME email live in the encrypted `cluster-settings` Secret
   and are filled into manifests by Flux `postBuild` substitution.
-- Traefik's Service uses k3s ServiceLB, so 80 and 443 bind on the node and
-  the existing ufw rules keep them tailnet-only.
+- Traefik's Service uses k3s ServiceLB, so 80 and 443 bind on the node.
+  ServiceLB's forwarding bypasses ufw's incoming rules, so the Service's
+  `loadBalancerSourceRanges` admits only the Tailscale range, and
+  `externalTrafficPolicy: Local` preserves client IPs.
 
 ## Alternatives considered
 

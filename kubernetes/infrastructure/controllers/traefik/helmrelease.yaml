@@ -42,11 +42,15 @@ spec:
     accessLog:
       enabled: true
       format: json
-    # k3s ServiceLB binds 80 and 443 on the node; ufw admits them only from
-    # the tailnet.
+    # k3s ServiceLB binds 80 and 443 on every node address. Its forwarding
+    # bypasses ufw's incoming rules, so the Service itself admits only the
+    # Tailscale address range. Local keeps the client IP for access logs.
     service:
       spec:
         type: LoadBalancer
+        externalTrafficPolicy: Local
+        loadBalancerSourceRanges:
+          - 100.64.0.0/10
     resources:
       requests:
         cpu: 50m
