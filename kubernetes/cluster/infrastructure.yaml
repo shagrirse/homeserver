@@ -70,8 +70,12 @@ spec:
   path: ./kubernetes/infrastructure/configs
   prune: true
   wait: true
-  # Manifests say ${DOMAIN} and ${ACME_EMAIL}; the values live encrypted in
-  # cluster-settings.sops.yaml.
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  # Manifests say ${DOMAIN}, ${ACME_EMAIL} and ${TUNNEL_ID}; the values live
+  # encrypted in cluster-settings.sops.yaml.
   postBuild:
     substituteFrom:
       - kind: Secret

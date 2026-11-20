@@ -15,3 +15,4 @@ link to their replacement.
 | [0007](0007-tailscale-ssh.md) | Tailscale SSH for remote shell access | Accepted |
 | [0008](0008-tailscale-policy-as-code.md) | Tailnet policy managed from git | Accepted |
 | [0009](0009-ingress-and-tls.md) | Traefik on the Gateway API with a cert-manager wildcard certificate | Accepted |
+| [0010](0010-cloudflare-tunnel.md) | Public access through a Cloudflare Tunnel configured in git | Accepted |

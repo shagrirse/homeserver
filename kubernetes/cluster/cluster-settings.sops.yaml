@@ -9,6 +9,7 @@ type: Opaque
 stringData:
     DOMAIN: ENC[AES256_GCM,data:OJXbVh6+BTFraI8GEg==,iv:2blrSPek6VShDyEmRDuBLJpd5H9mBRcfv+ilOCUosn4=,tag:uGfih9VGFY4nGFf6kG191w==,type:str]
     ACME_EMAIL: ENC[AES256_GCM,data:rk7X77rW/LwJaQ3oNkK/WiTcrg==,iv:QzaGFw4UUcWspoze0tkUAMH1jvdihgCuPE3VevaUGRE=,tag:YTQX01zC+cAbt9VC2Xezvw==,type:str]
+    TUNNEL_ID: ENC[AES256_GCM,data:YlVy+Sod6tFThU0Yse8Ww+wEt/kOV2HL/iY+sNou12PJzYLa,iv:Ri2xBArLjmFhyQa/N+/n69KMIyEI8xAp3TkqXTPX1xQ=,tag:uQbZxOUR3zi+NTYZdTwdPg==,type:str]
 sops:
     age:
         - enc: |
@@ -30,6 +31,6 @@ sops:
             -----END AGE ENCRYPTED FILE-----
           recipient: age1drlfd6xa7lhmjg5r7cmwgsh4xghjt54z5e79mufy593mjntr35sq0fxz32
     encrypted_regex: ^(data|stringData)$
-    lastmodified: "2026-11-19T17:51:57Z"
-    mac: ENC[AES256_GCM,data:ZVwcCPq9+VRJGsfRGIYduSt8XuEgpI+A+lzmWM5Xc2laoT7jUaQV76Dcjgk9lbyOlRWdYAqR4CyGS1B1h9DlubKuCLrgAEnNRz7pYG5nfUdhb0dp0EZ24NxwP/bi5lHk8tuJu8hij0rFNWkRZ+QiAKT66BPoP2HEffg/mzwgn0s=,iv:pk6skb9BUYGh3WyPKsKQ3K1b2e54+rzoD+9wfpqr5nc=,tag:K8L2bnhrUw6R75zLxkPRbA==,type:str]
+    lastmodified: "2026-11-20T17:13:15Z"
+    mac: ENC[AES256_GCM,data:PfrGb4X3tFwIwEjUrFf6isBeQW1rsu7jMZmWwgJxEk5TtDcdzbXsC5iOLaPCSg/uYaHl5Atp2SQZyuncrXjj3KC1MYvG2kxkUKBToh79CtRj7ldNa/gOIXQ97Di+RRAfYTf6tImpgKiJNAVtKO6HPqXQRNIP9eW9CLAlMIgvmEs=,iv:+KKefuPgzpv1FBhQvWw1mE4/KGVTIqXsjoJ6xc4Xz/0=,tag:GVA+LSKYG9pWt0f2dEwxfw==,type:str]
     version: 3.13.3

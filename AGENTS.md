@@ -28,7 +28,7 @@ CLAUDE.md only imports it.
 | --- | --- |
 | `provision/` | Tier 0: Ansible for the Pi (OS, k3s, Flux install) |
 | `kubernetes/cluster/` | Flux entry point; `flux-system/flux-instance.yaml` defines Flux itself, `infrastructure.yaml` orders the platform layers |
-| `kubernetes/infrastructure/` | Platform: `controllers/` (Traefik, cert-manager), then `configs/` (Gateway, issuers, wildcard cert) |
+| `kubernetes/infrastructure/` | Platform: `controllers/` (Traefik, cert-manager), then `configs/` (Gateway, issuers, wildcard cert, cloudflared) |
 | `tailscale/` | Tailnet policy file, applied by `.github/workflows/` |
 | `templates/app/` | Skeleton for an app under `kubernetes/apps/<app>/` |
 | `docs/adr/` | Decision records; add one for any architectural choice |
