@@ -1,0 +1,14 @@
+# Tunnel routing. Only hostnames listed here are reachable from the
+# internet; everything else gets a 404 from the catch-all rule. To publish
+# a hostname, add a rule above the catch-all:
+#
+#   - hostname: myapp.example.com
+#     service: https://traefik.traefik.svc.cluster.local:443
+#     originRequest:
+#       originServerName: myapp.example.com
+tunnel: ${TUNNEL_ID}
+credentials-file: /etc/cloudflared/credentials/credentials.json
+metrics: 0.0.0.0:2000
+no-autoupdate: true
+ingress:
+  - service: http_status:404
