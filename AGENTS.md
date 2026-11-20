@@ -11,10 +11,15 @@ CLAUDE.md only imports it.
   `provision/inventory.yml` (gitignored); commit only `inventory.example.yml`.
 - Never run `sops -d` to stdout. Never read or print the age key
   (`~/.config/sops/age/keys.txt`). Use `sops <file>` to edit in place.
-- Never `kubectl apply/delete/edit/patch`. Change manifests in git, open a PR,
-  and let Flux reconcile. Read-only `kubectl get/describe/logs` and `flux get`
-  are fine. Never read Secret values from the cluster; use
-  `kubectl describe secret` to see key names.
+- Agents are read-only against the node and cluster. Every change reaches
+  them through git: a PR the human merges, which Flux reconciles on its own
+  within minutes, or provisioning the human runs. That rules out anything
+  that writes, including `kubectl apply/delete/edit/patch/annotate/scale`,
+  `kubectl rollout restart`, `flux reconcile/suspend/resume`, `just provision`
+  and changes over SSH. Fine: `kubectl get/describe/logs`, `kubectl wait`,
+  `flux get`, `just provision-check`, and requests to served endpoints.
+- Never read Secret values from the cluster; use `kubectl describe secret` to
+  see key names.
 - Do not `git push` unless the human explicitly says so. Work on a branch; the
   human merges PRs.
 - Images are pinned by digest and must support arm64. Memory is 8GB for the
