@@ -26,7 +26,7 @@ first and run as yourself, so the files are written with your ownership:
 
 ```sh
 mkdir -p ~/.cloudflared
-alias cloudflared='docker run --rm -it --user "$(id -u):$(id -g)" -e HOME=/home/nonroot -v ~/.cloudflared:/home/nonroot/.cloudflared cloudflare/cloudflared:<tag>'
+alias cloudflared='docker run --rm --user "$(id -u):$(id -g)" -e HOME=/home/nonroot -v ~/.cloudflared:/home/nonroot/.cloudflared cloudflare/cloudflared:<tag>'
 ```
 
 ```sh
