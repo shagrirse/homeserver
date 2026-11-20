@@ -18,9 +18,16 @@ has no open ports. Decision: [ADR 0010](../../../../docs/adr/0010-cloudflare-tun
 
 cloudflared cannot start until the credentials and `TUNNEL_ID` hold real
 values, and `infra-configs` waits on it, so these must be committed before
-or with the manifests reaching `main`. Run once on the machine that holds your sops key. The `cloudflared` CLI is
-only needed here; `docker run --rm -it -v ~/.cloudflared:/home/nonroot/.cloudflared cloudflare/cloudflared:<tag>`
-works in its place.
+or with the manifests reaching `main`.
+
+Run once on the machine that holds your sops key. The `cloudflared` CLI is
+only needed here. To use the container image instead, create the directory
+first and run as yourself, so the files are written with your ownership:
+
+```sh
+mkdir -p ~/.cloudflared
+alias cloudflared='docker run --rm -it --user "$(id -u):$(id -g)" -e HOME=/home/nonroot -v ~/.cloudflared:/home/nonroot/.cloudflared cloudflare/cloudflared:<tag>'
+```
 
 ```sh
 cloudflared tunnel login                  # browser login, writes ~/.cloudflared/cert.pem
