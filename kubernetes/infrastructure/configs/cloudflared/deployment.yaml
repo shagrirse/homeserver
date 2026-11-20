@@ -29,7 +29,10 @@ spec:
           ports:
             - name: metrics
               containerPort: 2000
-          # /ready answers 200 once the tunnel has a live edge connection.
+          # /ready answers 200 only while an edge connection is up, so it gates
+          # readiness. Liveness uses /healthcheck, which answers while the
+          # process runs: cloudflared reconnects by itself during an edge or
+          # WAN outage, and restarting it would not help.
           readinessProbe:
             httpGet:
               path: /ready
@@ -37,9 +40,8 @@ spec:
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /ready
+              path: /healthcheck
               port: metrics
-            initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 3
           resources:
