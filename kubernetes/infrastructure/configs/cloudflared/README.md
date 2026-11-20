@@ -22,11 +22,12 @@ or with the manifests reaching `main`.
 
 Run once on the machine that holds your sops key. The `cloudflared` CLI is
 only needed here. To use the container image instead, create the directory
-first and run as yourself, so the files are written with your ownership:
+first and run as yourself, so the files are written with your ownership. The
+mount sits outside the image's private `/home/nonroot`:
 
 ```sh
 mkdir -p ~/.cloudflared
-alias cloudflared='docker run --rm --user "$(id -u):$(id -g)" -e HOME=/home/nonroot -v ~/.cloudflared:/home/nonroot/.cloudflared cloudflare/cloudflared:<tag>'
+alias cloudflared='docker run --rm --user "$(id -u):$(id -g)" -e HOME=/cfd -v ~/.cloudflared:/cfd/.cloudflared cloudflare/cloudflared:<tag>'
 ```
 
 ```sh
