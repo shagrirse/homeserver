@@ -32,8 +32,10 @@ decision record.
   Grafana reads logs through the `victoriametrics-logs-datasource` plugin,
   pinned in the HelmRelease and downloaded at pod start. Plugin
   auto-updates are off, so Prometheus and the other core datasources stay at
-  the versions shipped in the pinned image, and Grafana's suggested app
-  plugins are disabled.
+  the versions shipped in the pinned image. Only the Prometheus datasource
+  and the VictoriaLogs plugin are enabled: each other bundled datasource
+  runs as a separate backend process, and loading them all stalls Grafana 13's
+  startup inside its memory limit.
 - Dashboards (`Node`, `Flux`, `Traefik requests`) are JSON files in
   `dashboards/`, turned into the `grafana-dashboards` ConfigMap by
   `kustomization.yaml`. Grafana has no persistent volume, so changes made in
