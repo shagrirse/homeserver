@@ -42,6 +42,21 @@ spec:
     accessLog:
       enabled: true
       format: json
+    # Prometheus metrics on the chart's default `metrics` entrypoint (pod
+    # port 9100), discovered by Alloy through the ServiceMonitor below.
+    # Entry point and service labels, plus buckets aligned to the 500 ms
+    # latency SLO, are what SLOs 1-3 are measured from.
+    metrics:
+      prometheus:
+        entryPoint: metrics
+        addEntryPointsLabels: true
+        addServicesLabels: true
+        buckets: 0.05,0.1,0.25,0.5,1,2.5,5,10
+        service:
+          enabled: true
+        serviceMonitor:
+          enabled: true
+          interval: 30s
     # k3s ServiceLB binds 80 and 443 on every node address. Its forwarding
     # bypasses ufw's incoming rules, so the Service itself admits only the
     # Tailscale address range.

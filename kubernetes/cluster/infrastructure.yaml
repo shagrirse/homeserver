@@ -1,5 +1,5 @@
-# Platform layers, applied in order on a fresh node: Gateway API CRDs, then
-# the controllers that serve them, then the custom resources those
+# Platform layers, applied in order on a fresh node: the upstream CRDs,
+# then the controllers that serve them, then the custom resources those
 # controllers own.
 ---
 # Upstream Gateway API CRDs at the release Traefik supports. Kept apart from
@@ -32,6 +32,37 @@ spec:
   prune: false
   wait: true
 ---
+# Upstream Prometheus Operator CRDs so Alloy can discover ServiceMonitor and
+# PodMonitor objects. Same reasoning as Gateway API: kept apart from any
+# chart.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: prometheus-operator-crds
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://github.com/prometheus-operator/prometheus-operator
+  ref:
+    tag: v0.95.2
+  ignore: |
+    /*
+    !/example/prometheus-operator-crd/
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: prometheus-operator-crds
+  namespace: flux-system
+spec:
+  interval: 1h
+  sourceRef:
+    kind: GitRepository
+    name: prometheus-operator-crds
+  path: ./example/prometheus-operator-crd
+  prune: false
+  wait: true
+---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -40,6 +71,7 @@ metadata:
 spec:
   dependsOn:
     - name: gateway-api
+    - name: prometheus-operator-crds
   interval: 1h
   retryInterval: 2m
   timeout: 10m
@@ -53,6 +85,12 @@ spec:
     provider: sops
     secretRef:
       name: sops-age
+  # Manifests may say ${DOMAIN}; the values live encrypted in
+  # cluster-settings.sops.yaml, shared with infra-configs.
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: cluster-settings
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
