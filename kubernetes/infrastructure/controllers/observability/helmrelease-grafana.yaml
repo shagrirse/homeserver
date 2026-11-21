@@ -84,10 +84,14 @@ spec:
         port: grafana
       periodSeconds: 10
       failureThreshold: 60
-    # Grafana 13 uses about 200 MiB at rest with the plugins above.
+    # Grafana 13 holds about 200 MiB of heap at rest and 270 MiB while
+    # serving dashboards, plus about 180 MiB of page cache for its own
+    # binaries and plugins. A limit close to that sum makes the kernel evict
+    # the cached code pages and re-read them from disk (major page faults),
+    # which stalls every request until the readiness probe fails.
     resources:
       requests:
         cpu: 50m
-        memory: 128Mi
+        memory: 256Mi
       limits:
-        memory: 384Mi
+        memory: 768Mi
