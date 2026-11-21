@@ -1,0 +1,41 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: grafana
+  values:
+    image:
+      registry: docker.io
+      repository: grafana/grafana
+      tag: 12.3.1
+      # The chart renders `tag@sha256:<sha>`, so the prefix stays off here.
+      sha: 2175aaa91c96733d86d31cf270d5310b278654b03f5718c59de12a865380a31f
+    admin:
+      existingSecret: grafana-admin
+      userKey: admin-user
+      passwordKey: admin-password
+    # Datasources provisioned from files: the chart mounts this as the
+    # datasources.yaml provisioning file.
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: victoria-metrics
+            type: prometheus
+            access: proxy
+            url: http://victoria-metrics-victoria-metrics-single-server.observability.svc:8428
+            isDefault: true
+          - name: victoria-logs
+            type: loki
+            access: proxy
+            url: http://victoria-logs-victoria-logs-single-server.observability.svc:9428
+    resources:
+      requests:
+        cpu: 50m
+        memory: 96Mi
+      limits:
+        memory: 256Mi

@@ -1,0 +1,245 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: alloy
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: alloy
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    image:
+      registry: docker.io
+      repository: grafana/alloy
+      tag: v1.22.0
+      digest: sha256:9acc2529bc1edb7f5b2bd801dd8334ebc80c158e3a9e5526ecd7c9a273d43189
+    configReloader:
+      image:
+        registry: quay.io
+        repository: prometheus-operator/prometheus-config-reloader
+        tag: v0.94.2@sha256:a1897c67478bc23434534e91ad3855280771196b1daf17144db9dbcb655bef71
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          memory: 32Mi
+    controller:
+      type: daemonset
+      # The unix exporter reads /proc; sharing the host PID namespace makes
+      # /proc describe the node instead of the container.
+      hostPID: true
+      volumes:
+        extra:
+          - name: varlogpods
+            hostPath:
+              path: /var/log/pods
+    alloy:
+      mounts:
+        extra:
+          - name: varlogpods
+            readOnly: true
+            mountPath: /var/log/pods
+      resources:
+        requests:
+          cpu: 50m
+          memory: 96Mi
+        limits:
+          memory: 256Mi
+      configMap:
+        create: true
+        content: |-
+          logging {
+            level = "info"
+          }
+
+          discovery.kubernetes "pods" {
+            role = "pod"
+          }
+
+          discovery.kubernetes "nodes" {
+            role = "node"
+          }
+
+          // Apps self-declare scrape endpoints with ServiceMonitor and
+          // PodMonitor CRDs.
+          prometheus.operator.servicemonitors "servicemonitors" {
+            forward_to = [prometheus.scrape.service_monitors.receiver]
+          }
+
+          prometheus.operator.podmonitors "podmonitors" {
+            forward_to = [prometheus.scrape.pod_monitors.receiver]
+          }
+
+          prometheus.scrape "service_monitors" {
+            scrape_interval = "30s"
+            forward_to = [prometheus.remote_write.victoriametrics.receiver]
+          }
+
+          prometheus.scrape "pod_monitors" {
+            scrape_interval = "30s"
+            forward_to = [prometheus.remote_write.victoriametrics.receiver]
+          }
+
+          // Host metrics from the embedded unix exporter.
+          prometheus.exporter.unix "node" {}
+
+          prometheus.scrape "node" {
+            job_name = "node"
+            scrape_interval = "30s"
+            targets = prometheus.exporter.unix.node.targets
+            forward_to = [prometheus.remote_write.victoriametrics.receiver]
+          }
+
+          // Kubelet and cAdvisor, hit directly on each node's kubelet port.
+          // The ServiceAccount token and the chart's nodes/metrics RBAC
+          // authorize the requests.
+          discovery.relabel "nodes" {
+            targets = discovery.kubernetes.nodes.targets
+
+            rule {
+              source_labels = ["__meta_kubernetes_node_name"]
+              target_label = "instance"
+            }
+
+            rule {
+              action = "labeldrop"
+              regex = "__meta_kubernetes_.*"
+            }
+          }
+
+          prometheus.scrape "kubelet" {
+            job_name = "kubelet"
+            scrape_interval = "30s"
+            targets = discovery.relabel.nodes.output
+            scheme = "https"
+            bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+            tls_config {
+              insecure_skip_verify = true
+            }
+            forward_to = [prometheus.remote_write.victoriametrics.receiver]
+          }
+
+          prometheus.scrape "cadvisor" {
+            job_name = "cadvisor"
+            scrape_interval = "30s"
+            targets = discovery.relabel.nodes.output
+            scheme = "https"
+            metrics_path = "/metrics/cadvisor"
+            bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+            tls_config {
+              insecure_skip_verify = true
+            }
+            forward_to = [prometheus.relabel.cadvisor.receiver]
+          }
+
+          // cAdvisor emits a series per container; keep only the container
+          // and machine families.
+          prometheus.relabel "cadvisor" {
+            rule {
+              source_labels = ["__name__"]
+              regex = "container_.*|machine_.*"
+              action = "keep"
+            }
+
+            forward_to = [prometheus.remote_write.victoriametrics.receiver]
+          }
+
+          // The Flux controllers serve the gotk_* metrics (SLO 4) on pod
+          // port 8080.
+          discovery.relabel "flux" {
+            targets = discovery.kubernetes.pods.targets
+
+            rule {
+              source_labels = ["__meta_kubernetes_namespace"]
+              regex = "flux-system"
+              action = "keep"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_part_of"]
+              regex = "flux"
+              action = "keep"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_container_port_number"]
+              regex = "8080"
+              action = "keep"
+            }
+
+            rule {
+              action = "labeldrop"
+              regex = "__meta_kubernetes_.*"
+            }
+          }
+
+          prometheus.scrape "flux" {
+            job_name = "flux"
+            scrape_interval = "30s"
+            targets = discovery.relabel.flux.output
+            forward_to = [prometheus.remote_write.victoriametrics.receiver]
+          }
+
+          prometheus.remote_write "victoriametrics" {
+            endpoint {
+              url = "http://victoria-metrics-victoria-metrics-single-server.observability.svc:8428/api/v1/write"
+            }
+          }
+
+          // Pod logs tailed from /var/log/pods and pushed to VictoriaLogs
+          // over the Loki protocol. The glob's wildcard absorbs the
+          // namespace_pod_ prefix of the log directory.
+          discovery.relabel "pod_logs" {
+            targets = discovery.kubernetes.pods.targets
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+              separator = "/"
+              target_label = "__path__"
+              replacement = "/var/log/pods/*$1/*.log"
+            }
+
+            rule {
+              action = "labeldrop"
+              regex = "__meta_kubernetes_.*"
+            }
+          }
+
+          loki.source.file "pod_logs" {
+            targets = discovery.relabel.pod_logs.output
+            tail_from_end = true
+            forward_to = [loki.process.pod_logs.receiver]
+          }
+
+          loki.process "pod_logs" {
+            stage.cri {}
+
+            stage.regex {
+              source = "filename"
+              expression = "/var/log/pods/(?P<namespace>.*?)_(?P<pod>.*?)_(?P<uid>[0-9a-f-]+)/(?P<container>.*?)/[0-9]+\\.log"
+            }
+
+            stage.labels {
+              values = {
+                namespace = "namespace",
+                pod       = "pod",
+                container = "container",
+              }
+            }
+
+            forward_to = [loki.write.victorialogs.receiver]
+          }
+
+          loki.write "victorialogs" {
+            endpoint {
+              url = "http://victoria-logs-victoria-logs-single-server.observability.svc:9428/insert/loki/api/v1/push"
+            }
+          }
+    serviceMonitor:
+      enabled: true
+      interval: 30s

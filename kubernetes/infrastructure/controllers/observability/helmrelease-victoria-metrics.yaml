@@ -1,0 +1,32 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: victoria-metrics
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: victoria-metrics-single
+  values:
+    server:
+      image:
+        # The chart builds `repository:tag`, so the digest rides on the tag
+        # for a single reference pinned by digest.
+        tag: v1.156.0@sha256:da8a90ac0912f16589be2b96a6441a2fca4bca415c83783d972d92e3b5b66970
+      retentionPeriod: 30d
+      # The flag caps VM's caches as a percentage of system memory, which
+      # defaults to 60% of the node's 8 GB. 5% keeps the caches below the
+      # container limit either way.
+      extraArgs:
+        memory.allowedPercent: "5"
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      serviceMonitor:
+        enabled: true
