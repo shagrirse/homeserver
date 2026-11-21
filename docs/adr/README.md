@@ -16,3 +16,7 @@ link to their replacement.
 | [0008](0008-tailscale-policy-as-code.md) | Tailnet policy managed from git | Accepted |
 | [0009](0009-ingress-and-tls.md) | Traefik on the Gateway API with a cert-manager wildcard certificate | Accepted |
 | [0010](0010-cloudflare-tunnel.md) | Public access through a Cloudflare Tunnel configured in git | Accepted |
+| [0011](0011-slo-targets.md) | Service level objectives | Accepted |
+| [0012](0012-observability-stack.md) | Observability stack: Alloy into VictoriaMetrics, VictoriaLogs and Grafana | Accepted |
+| [0013](0013-alerting.md) | Alerting: SLO burn rates and hard-down pages to Telegram | Accepted |
+| [0014](0014-backups.md) | Backups: restic into Cloudflare R2 with tested restores | Accepted |
