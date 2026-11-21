@@ -22,8 +22,10 @@ maintained by one person, so component count and RAM matter.
   container limits and VictoriaMetrics' `memory.allowedPercent`, since its
   default reserves 60% of node RAM.
 - Grafana serves dashboards and, per [0013](0013-alerting.md), alerting.
-- kube-state-metrics supplies cluster object metrics, and Flux's own
-  `gotk_*` metrics feed SLO 4.
+- kube-state-metrics supplies cluster object metrics. SLO 4 is measured
+  from the Flux Operator's `flux_resource_info`, which reports the Ready and
+  suspended state of every Flux resource; the controllers' `gotk_*` metrics
+  add reconcile durations.
 - The public journey is probed by Grafana Synthetic Monitoring hosted
   probes from outside the tailnet, exercising DNS, Cloudflare edge, tunnel,
   Traefik and the app.

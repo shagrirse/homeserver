@@ -1,0 +1,17 @@
+# Flux Operator exports flux_resource_info: the Ready and suspended state of
+# every Flux resource, which SLO 4 is measured from. The operator is installed
+# by provisioning, so it is selected here rather than configured in its chart.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: flux-operator
+spec:
+  namespaceSelector:
+    matchNames:
+      - flux-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: flux-operator
+  endpoints:
+    - port: http
+      interval: 30s
