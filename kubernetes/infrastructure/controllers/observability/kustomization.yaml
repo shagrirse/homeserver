@@ -15,3 +15,13 @@ resources:
   - helmrelease-grafana.yaml
   - httproute.yaml
   - secret.sops.yaml
+# Dashboards live in git. The name carries no content hash so the Grafana
+# HelmRelease can reference it; Grafana re-reads the mounted files itself.
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: grafana-dashboards
+    files:
+      - dashboards/node.json
+      - dashboards/flux.json
+      - dashboards/traefik.json

@@ -14,10 +14,10 @@ spec:
         # for a single reference pinned by digest.
         tag: v1.54.0@sha256:ee4e820cac3721f5f5d91641b950c22439593adc4224f9655e5333d5a84c1dfe
       retentionPeriod: 14d
-      # Same cache cap reasoning as VictoriaMetrics: 3% of system memory
-      # stays below the container limit.
+      # Same cache cap reasoning as VictoriaMetrics: 2% of system memory
+      # (about 160 MB) leaves headroom under the container limit.
       extraArgs:
-        memory.allowedPercent: "3"
+        memory.allowedPercent: "2"
       persistentVolume:
         enabled: true
         size: 10Gi

@@ -30,20 +30,49 @@ spec:
           memory: 32Mi
     controller:
       type: daemonset
-      # The unix exporter reads /proc; sharing the host PID namespace makes
-      # /proc describe the node instead of the container.
-      hostPID: true
       volumes:
         extra:
           - name: varlogpods
             hostPath:
               path: /var/log/pods
+          # The unix exporter reads the node's own /proc, /sys and root
+          # filesystem through these read-only mounts. Without them it would
+          # report the container's mounts instead of the node's disks.
+          - name: host-proc
+            hostPath:
+              path: /proc
+          - name: host-sys
+            hostPath:
+              path: /sys
+          - name: host-root
+            hostPath:
+              path: /
     alloy:
       mounts:
         extra:
           - name: varlogpods
             readOnly: true
             mountPath: /var/log/pods
+          - name: host-proc
+            readOnly: true
+            mountPath: /host/proc
+          - name: host-sys
+            readOnly: true
+            mountPath: /host/sys
+          - name: host-root
+            readOnly: true
+            mountPath: /host/root
+            mountPropagation: HostToContainer
+      # Root reads the root-owned pod logs and host files; everything else
+      # is dropped.
+      securityContext:
+        runAsUser: 0
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
       resources:
         requests:
           cpu: 50m
@@ -85,8 +114,14 @@ spec:
             forward_to = [prometheus.remote_write.victoriametrics.receiver]
           }
 
-          // Host metrics from the embedded unix exporter.
-          prometheus.exporter.unix "node" {}
+          // Host metrics from the embedded unix exporter, read through the
+          // read-only host mounts. Network metrics come from the pod's own
+          // network namespace.
+          prometheus.exporter.unix "node" {
+            procfs_path = "/host/proc"
+            sysfs_path  = "/host/sys"
+            rootfs_path = "/host/root"
+          }
 
           prometheus.scrape "node" {
             job_name = "node"
@@ -230,6 +265,12 @@ spec:
                 pod       = "pod",
                 container = "container",
               }
+            }
+
+            // The filename is unique per container restart; the labels above
+            // already identify the stream.
+            stage.label_drop {
+              values = ["filename"]
             }
 
             forward_to = [loki.write.victorialogs.receiver]

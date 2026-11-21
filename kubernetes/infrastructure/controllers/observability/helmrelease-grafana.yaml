@@ -18,21 +18,51 @@ spec:
       existingSecret: grafana-admin
       userKey: admin-user
       passwordKey: admin-password
+    # VictoriaLogs ingests the Loki protocol but does not serve its query
+    # API, so logs are queried through VictoriaMetrics' own datasource
+    # plugin. Grafana downloads the pinned, signed release at pod start.
+    plugins:
+      - victoriametrics-logs-datasource 0.34.0
     # Datasources provisioned from files: the chart mounts this as the
-    # datasources.yaml provisioning file.
+    # datasources.yaml provisioning file. Fixed UIDs let dashboards refer
+    # to them.
     datasources:
       datasources.yaml:
         apiVersion: 1
         datasources:
           - name: victoria-metrics
+            uid: victoria-metrics
             type: prometheus
             access: proxy
             url: http://victoria-metrics-victoria-metrics-single-server.observability.svc:8428
             isDefault: true
           - name: victoria-logs
-            type: loki
+            uid: victoria-logs
+            type: victoriametrics-logs-datasource
             access: proxy
             url: http://victoria-logs-victoria-logs-single-server.observability.svc:9428
+    # Dashboards live in git (the grafana-dashboards ConfigMap generated in
+    # kustomization.yaml). Changes made in the UI are not persisted.
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+          - name: git
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: true
+            allowUiUpdates: false
+            options:
+              path: /var/lib/grafana/dashboards/git
+    dashboardsConfigMaps:
+      git: grafana-dashboards
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+    # The chart's helm test pod uses an unpinned image and Flux never runs it.
+    testFramework:
+      enabled: false
     resources:
       requests:
         cpu: 50m
