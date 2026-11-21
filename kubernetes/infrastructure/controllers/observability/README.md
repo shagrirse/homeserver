@@ -14,7 +14,7 @@ decision record.
 | VictoriaMetrics | `victoria-metrics` | victoria-metrics-single chart, OCI | Single node, 30d retention, 20 Gi PVC |
 | VictoriaLogs | `victoria-logs` | victoria-logs-single chart, OCI | Single node, 14d retention, 10 Gi PVC, Loki protocol ingest on port 9428 |
 | kube-state-metrics | `kube-state-metrics` | prometheus-community chart, classic Helm repo | Its chart has no OCI release |
-| Grafana | `grafana` | Grafana chart, OCI | Admin credentials in `secret.sops.yaml`; datasources and dashboards provisioned from git |
+| Grafana | `grafana` | grafana-community chart, OCI | Admin credentials in `secret.sops.yaml`; datasources and dashboards provisioned from git |
 
 - Alloy's config lives in the `alloy` HelmRelease values. Apps self-declare
   scrape endpoints with ServiceMonitor and PodMonitor CRDs (installed from
@@ -30,7 +30,10 @@ decision record.
 - Datasources have fixed UIDs (`victoria-metrics`, `victoria-logs`).
   VictoriaLogs ingests the Loki protocol but does not serve its query API, so
   Grafana reads logs through the `victoriametrics-logs-datasource` plugin,
-  pinned in the HelmRelease and downloaded at pod start.
+  pinned in the HelmRelease and downloaded at pod start. Plugin
+  auto-updates are off, so Prometheus and the other core datasources stay at
+  the versions shipped in the pinned image, and Grafana's suggested app
+  plugins are disabled.
 - Dashboards (`Node`, `Flux`, `Traefik requests`) are JSON files in
   `dashboards/`, turned into the `grafana-dashboards` ConfigMap by
   `kustomization.yaml`. Grafana has no persistent volume, so changes made in

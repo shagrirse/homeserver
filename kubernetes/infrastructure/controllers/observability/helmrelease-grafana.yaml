@@ -11,9 +11,11 @@ spec:
     image:
       registry: docker.io
       repository: grafana/grafana
-      tag: 12.3.1
+      # The chart's default distroless variant: no shell, read-only root
+      # filesystem.
+      tag: 13.3.1-distroless
       # The chart renders `tag@sha256:<sha>`, so the prefix stays off here.
-      sha: 2175aaa91c96733d86d31cf270d5310b278654b03f5718c59de12a865380a31f
+      sha: 54e297ac67e2b72572f926892f4e06074dc4f79f2a56ed9a9ca9a88a46f28733
     admin:
       existingSecret: grafana-admin
       userKey: admin-user
@@ -22,7 +24,14 @@ spec:
     # API, so logs are queried through VictoriaMetrics' own datasource
     # plugin. Grafana downloads the pinned, signed release at pod start.
     plugins:
-      - victoriametrics-logs-datasource 0.34.0
+      - victoriametrics-logs-datasource@0.34.0
+    grafana.ini:
+      plugins:
+        # Grafana 13 otherwise replaces the core datasource plugins shipped in
+        # the pinned image (Prometheus included) with their latest release on
+        # every start, and downloads app plugins this setup does not use.
+        preinstall_auto_update: false
+        disable_plugins: grafana-advisor-app,grafana-exploretraces-app,grafana-lokiexplore-app,grafana-metricsdrilldown-app,grafana-pyroscope-app
     # Datasources provisioned from files: the chart mounts this as the
     # datasources.yaml provisioning file. Fixed UIDs let dashboards refer
     # to them.
