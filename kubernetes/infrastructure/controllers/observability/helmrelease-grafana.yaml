@@ -31,7 +31,11 @@ spec:
         # the pinned image (Prometheus included) with their latest release on
         # every start, and downloads app plugins this setup does not use.
         preinstall_auto_update: false
-        disable_plugins: grafana-advisor-app,grafana-exploretraces-app,grafana-lokiexplore-app,grafana-metricsdrilldown-app,grafana-pyroscope-app
+        # Only the Prometheus datasource (metrics) and the VictoriaLogs plugin
+        # are used. Every other bundled datasource runs as its own backend
+        # process: with all of them loaded, startup stalls under the memory
+        # limit and the liveness probe kills the pod.
+        disable_plugins: grafana-advisor-app,grafana-exploretraces-app,grafana-lokiexplore-app,grafana-metricsdrilldown-app,grafana-pyroscope-app,cloudwatch,elasticsearch,grafana-postgresql-datasource,grafana-pyroscope-datasource,influxdb,jaeger,loki,mssql,mysql,opentsdb,stackdriver,tempo,zipkin,graphite,grafana-azure-monitor-datasource,grafana-testdata-datasource
     # Datasources provisioned from files: the chart mounts this as the
     # datasources.yaml provisioning file. Fixed UIDs let dashboards refer
     # to them.
@@ -72,9 +76,18 @@ spec:
     # The chart's helm test pod uses an unpinned image and Flux never runs it.
     testFramework:
       enabled: false
+    # A slow first start, such as plugin installation on a loaded node, must
+    # not trip the liveness probe: it only runs once this probe has passed.
+    startupProbe:
+      httpGet:
+        path: /api/health
+        port: grafana
+      periodSeconds: 10
+      failureThreshold: 60
+    # Grafana 13 uses about 200 MiB at rest with the plugins above.
     resources:
       requests:
         cpu: 50m
-        memory: 96Mi
+        memory: 128Mi
       limits:
-        memory: 256Mi
+        memory: 384Mi
