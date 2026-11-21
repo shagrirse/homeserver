@@ -52,10 +52,6 @@ spec:
         addEntryPointsLabels: true
         addServicesLabels: true
         buckets: 0.05,0.1,0.25,0.5,1,2.5,5,10
-        # Render-time guard only; it does not weaken scraping. At first
-        # install the ServiceMonitor CRD arrives with Alloy, so the release
-        # must not fail while it is absent.
-        disableAPICheck: true
         service:
           enabled: true
         serviceMonitor:
