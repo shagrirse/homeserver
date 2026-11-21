@@ -95,22 +95,13 @@ spec:
           }
 
           // Apps self-declare scrape endpoints with ServiceMonitor and
-          // PodMonitor CRDs.
+          // PodMonitor CRDs. These components discover and scrape the targets
+          // themselves, honouring each monitor's own interval.
           prometheus.operator.servicemonitors "servicemonitors" {
-            forward_to = [prometheus.scrape.service_monitors.receiver]
-          }
-
-          prometheus.operator.podmonitors "podmonitors" {
-            forward_to = [prometheus.scrape.pod_monitors.receiver]
-          }
-
-          prometheus.scrape "service_monitors" {
-            scrape_interval = "30s"
             forward_to = [prometheus.remote_write.victoriametrics.receiver]
           }
 
-          prometheus.scrape "pod_monitors" {
-            scrape_interval = "30s"
+          prometheus.operator.podmonitors "podmonitors" {
             forward_to = [prometheus.remote_write.victoriametrics.receiver]
           }
 
