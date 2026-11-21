@@ -24,7 +24,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Kustomizations Ready",
+      "title": "SLO 4: Kustomizations Ready, 28 days",
       "datasource": {
         "type": "prometheus",
         "uid": "victoria-metrics"
@@ -32,7 +32,7 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 8,
+        "w": 6,
         "h": 8
       },
       "targets": [
@@ -42,7 +42,40 @@
             "type": "prometheus",
             "uid": "victoria-metrics"
           },
-          "expr": "sum(gotk_reconcile_condition{kind=\"Kustomization\", type=\"Ready\", status=\"True\"})",
+          "expr": "avg_over_time(((count(flux_resource_info{kind=\"Kustomization\", suspended=\"False\", ready=\"True\"}) == bool count(flux_resource_info{kind=\"Kustomization\", suspended=\"False\"})) or on() (vector(0) and on() (count(up) > 0)))[28d:5m])",
+          "legendFormat": "attainment"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "description": "Share of measured 5-minute samples in the last 28 days where every Kustomization that is not suspended was Ready. Target 99%."
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Kustomizations",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoria-metrics"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoria-metrics"
+          },
+          "expr": "count(flux_resource_info{kind=\"Kustomization\", suspended=\"False\", ready=\"True\"}) or vector(0)",
           "legendFormat": "ready"
         },
         {
@@ -51,41 +84,17 @@
             "type": "prometheus",
             "uid": "victoria-metrics"
           },
-          "expr": "sum(gotk_reconcile_condition{kind=\"Kustomization\", type=\"Ready\", status!=\"True\"} == 1) or vector(0)",
+          "expr": "count(flux_resource_info{kind=\"Kustomization\", suspended=\"False\", ready!=\"True\"}) or vector(0)",
           "legendFormat": "not ready"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
         },
-        "overrides": []
-      },
-      "description": "SLO 4 measures the share of samples where every Kustomization is Ready."
-    },
-    {
-      "id": 2,
-      "type": "timeseries",
-      "title": "Kustomization Ready over time",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "victoria-metrics"
-      },
-      "gridPos": {
-        "x": 8,
-        "y": 0,
-        "w": 16,
-        "h": 8
-      },
-      "targets": [
         {
-          "refId": "A",
+          "refId": "C",
           "datasource": {
             "type": "prometheus",
             "uid": "victoria-metrics"
           },
-          "expr": "gotk_reconcile_condition{kind=\"Kustomization\", type=\"Ready\", status=\"True\"}",
-          "legendFormat": "{{name}}"
+          "expr": "count(flux_resource_info{kind=\"Kustomization\", suspended=\"True\"}) or vector(0)",
+          "legendFormat": "suspended"
         }
       ],
       "fieldConfig": {
@@ -98,7 +107,40 @@
     {
       "id": 3,
       "type": "timeseries",
-      "title": "HelmReleases not Ready",
+      "title": "All Kustomizations Ready",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoria-metrics"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoria-metrics"
+          },
+          "expr": "((count(flux_resource_info{kind=\"Kustomization\", suspended=\"False\", ready=\"True\"}) == bool count(flux_resource_info{kind=\"Kustomization\", suspended=\"False\"})) or on() (vector(0) and on() (count(up) > 0)))",
+          "legendFormat": "all ready"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "description": "1 when every Kustomization that is not suspended is Ready; 0 when one is not, or when the operator reports nothing while scraping works."
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Not Ready resources",
       "datasource": {
         "type": "prometheus",
         "uid": "victoria-metrics"
@@ -116,8 +158,11 @@
             "type": "prometheus",
             "uid": "victoria-metrics"
           },
-          "expr": "gotk_reconcile_condition{kind=\"HelmRelease\", type=\"Ready\", status!=\"True\"} == 1",
-          "legendFormat": "{{namespace}}/{{name}}"
+          "expr": "flux_resource_info{ready!=\"True\", suspended=\"False\"}",
+          "legendFormat": "{{kind}} {{exported_namespace}}/{{name}} {{reason}}",
+          "instant": true,
+          "range": false,
+          "format": "table"
         }
       ],
       "fieldConfig": {
@@ -128,9 +173,9 @@
       }
     },
     {
-      "id": 4,
-      "type": "timeseries",
-      "title": "Reconcile duration p95",
+      "id": 5,
+      "type": "table",
+      "title": "Suspended resources",
       "datasource": {
         "type": "prometheus",
         "uid": "victoria-metrics"
@@ -139,6 +184,41 @@
         "x": 12,
         "y": 8,
         "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoria-metrics"
+          },
+          "expr": "flux_resource_info{suspended=\"True\"}",
+          "legendFormat": "{{kind}} {{exported_namespace}}/{{name}}",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Reconcile duration p95",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoria-metrics"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
         "h": 8
       },
       "targets": [
