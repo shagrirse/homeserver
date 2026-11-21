@@ -236,8 +236,14 @@ spec:
             }
           }
 
+          // loki.source.file opens paths literally, so the glob is expanded
+          // here into one target per log file.
+          local.file_match "pod_logs" {
+            path_targets = discovery.relabel.pod_logs.output
+          }
+
           loki.source.file "pod_logs" {
-            targets = discovery.relabel.pod_logs.output
+            targets = local.file_match.pod_logs.targets
             tail_from_end = true
             forward_to = [loki.process.pod_logs.receiver]
           }
