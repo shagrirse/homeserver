@@ -25,6 +25,12 @@ decision record.
   metrics come from the Alloy pod's own network namespace; per-pod traffic
   is in the cAdvisor series. Alloy runs as root with all capabilities dropped
   to read the root-owned pod logs.
+- Log message field: VictoriaLogs needs a `_msg` on every line. Plain-text
+  lines use the whole line, and JSON lines use the first of `msg`, `message`
+  or `log` (the push URL's `_msg_field`). A service that logs JSON with a
+  different key, or with no message key like Traefik's access log, gets a
+  "missing _msg field" notice instead. Give it a `stage.match` block in
+  `loki.process "pod_logs"` that builds a `msg` structured metadata field.
 - Grafana is served at `grafana.<domain>` through the shared Gateway, so it
   is reachable over the tailnet like every other route.
 - Datasources have fixed UIDs (`victoria-metrics`, `victoria-logs`).

@@ -271,6 +271,34 @@ spec:
               values = ["filename"]
             }
 
+            // Traefik's JSON access log carries no message key. Each request
+            // is summarised as method, host, path and status in the msg
+            // field, which VictoriaLogs uses as _msg. The JSON line is sent
+            // unchanged.
+            stage.match {
+              selector = "{container=\"traefik\"} |= \"RequestMethod\""
+
+              stage.json {
+                expressions = {
+                  method = "RequestMethod",
+                  host   = "RequestHost",
+                  path   = "RequestPath",
+                  status = "DownstreamStatus",
+                }
+              }
+
+              stage.template {
+                source   = "msg"
+                template = "{{ .method }} {{ .host }}{{ .path }} {{ .status }}"
+              }
+
+              stage.structured_metadata {
+                values = {
+                  msg = "msg",
+                }
+              }
+            }
+
             forward_to = [loki.write.victorialogs.receiver]
           }
 
