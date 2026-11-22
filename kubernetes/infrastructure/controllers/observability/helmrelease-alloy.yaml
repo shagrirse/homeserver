@@ -163,12 +163,13 @@ spec:
             forward_to = [prometheus.relabel.cadvisor.receiver]
           }
 
-          // cAdvisor emits a series per container; keep only the container
-          // and machine families.
+          // cAdvisor emits a series per container; keep the container and
+          // machine families plus the up and scrape_* series that report
+          // whether the endpoint itself is reachable.
           prometheus.relabel "cadvisor" {
             rule {
               source_labels = ["__name__"]
-              regex = "container_.*|machine_.*"
+              regex = "container_.*|machine_.*|up|scrape_.*"
               action = "keep"
             }
 
@@ -275,7 +276,7 @@ spec:
 
           loki.write "victorialogs" {
             endpoint {
-              url = "http://victoria-logs-victoria-logs-single-server.observability.svc:9428/insert/loki/api/v1/push"
+              url = "http://victoria-logs-victoria-logs-single-server.observability.svc:9428/insert/loki/api/v1/push?_msg_field=msg,message,log"
             }
           }
     serviceMonitor:
