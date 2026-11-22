@@ -105,7 +105,7 @@
             "type": "prometheus",
             "uid": "victoria-metrics"
           },
-          "expr": "100 * (1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|devtmpfs|ramfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs|devtmpfs|ramfs\"})",
+          "expr": "100 * (1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|devtmpfs|ramfs\",mountpoint!~\"/var/lib/kubelet/.*|/run/.*\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs|devtmpfs|ramfs\",mountpoint!~\"/var/lib/kubelet/.*|/run/.*\"})",
           "legendFormat": "{{mountpoint}}"
         }
       ],
