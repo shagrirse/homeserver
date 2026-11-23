@@ -2,10 +2,10 @@
 # Run gitleaks with the local redaction rules (domain, LAN, hostname, canary) on top of
 # the repo config. Usage: gitleaks.sh <mode> [args]
 #   staged         staged changes
-#   range          commit contents of the commits chosen by range.sh
+#   range          commit contents of the commits chosen by range.sh, plus the
+#                  combined diff of each merge commit among them
 #   meta           commit messages and changed paths of that range, plus branch and
 #                  tag names when pushing
-#   text           stdin (PR title, body, branch name)
 #   files <path>.. each path as a directory or file
 #   history        every ref, every commit message and every path ever changed; findings
 #                  of the canary rule are ignored
@@ -71,7 +71,14 @@ case "$mode" in
   range)
     shas="$("$here/range.sh")"
     [[ -z "$shas" ]] && exit 0
-    exec gitleaks git "${common[@]}" --log-opts="--no-walk ${shas//$'\n'/ }"
+    status=0
+    gitleaks git "${common[@]}" --log-opts="--no-walk ${shas//$'\n'/ }" || status=$?
+    # gitleaks git skips merge commits; scan what each merge adds through its combined diff.
+    # shellcheck disable=SC2086 # SHAs contain no whitespace
+    for merge in $(git rev-list --no-walk --merges $shas); do
+      git show --cc --format= "$merge" | gitleaks stdin "${common[@]}" || status=$?
+    done
+    exit "$status"
     ;;
   meta)
     shas="$("$here/range.sh")"
@@ -82,9 +89,6 @@ case "$mode" in
         git for-each-ref --format='%(refname)' refs/heads refs/tags
       fi
     } | gitleaks stdin "${common[@]}"
-    ;;
-  text)
-    gitleaks stdin "${common[@]}"
     ;;
   files)
     status=0
@@ -108,7 +112,7 @@ case "$mode" in
     fi
     ;;
   *)
-    echo "usage: ${0##*/} staged|range|meta|text|files <path>...|history" >&2
+    echo "usage: ${0##*/} staged|range|meta|files <path>...|history" >&2
     exit 2
     ;;
 esac
