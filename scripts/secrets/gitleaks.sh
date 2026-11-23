@@ -60,7 +60,7 @@ commit_metadata() {
   local sha
   for sha in "$@"; do
     git log -1 --format=%B "$sha"
-    git -c core.quotepath=false diff-tree -r --root --no-commit-id --name-only "$sha"
+    git -c core.quotepath=false diff-tree -r -c --root --no-commit-id --name-only "$sha"
   done
 }
 

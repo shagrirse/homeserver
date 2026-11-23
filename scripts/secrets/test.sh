@@ -240,6 +240,20 @@ git add extra.txt
 git commit -q -m "merge: side"
 check "range catches a canary in a file added by a merge commit" fail range_of "$base" "$scripts/gitleaks.sh" range
 
+new_repo merge-added-path
+base=$(git rev-parse HEAD)
+git checkout -q -b side
+commit_file side.txt "side" "feat: side"
+git checkout -q main
+commit_file main.txt "main" "feat: main"
+git merge -q --no-ff --no-commit side >/dev/null 2>&1
+c=$(canary)
+mkdir dir
+printf 'clean\n' >"dir/$c.txt"
+git add dir
+git commit -q -m "merge: side"
+check "meta catches a canary in a path added by a merge commit" fail range_of "$base" "$scripts/gitleaks.sh" meta
+
 new_repo merge-push
 merge_conflict "resolved with $(canary)"
 check "push of a merge that adds a canary is rejected" fail git push origin main
