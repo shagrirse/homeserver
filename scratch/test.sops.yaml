@@ -1,1 +1,1 @@
-password: hunter2
+password: ENC[AES256_GCM,data:abc,tag:def]
