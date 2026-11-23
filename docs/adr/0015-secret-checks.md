@@ -38,8 +38,8 @@ repositories, so GitHub push protection cannot enforce the redaction values.
   the combined diff of each merge is scanned as well.
 - The `checks` workflow first runs `scripts/secrets/test.sh`, then the
   range hooks over the pull request's commits, scans the title,
-  description, branch name and the diff the squash lands, then runs every
-  pre-commit hook over the tree. It is the single required status check.
+  description, branch name and the lines and paths the squash adds, then
+  runs every pre-commit hook over the tree. It is the single required status check.
 - `main` accepts squash merges only. The squash message is the pull request
   title and description, which the workflow scans.
 - A branch ruleset on `main` requires a pull request with no approvals (a
