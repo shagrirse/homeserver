@@ -229,6 +229,7 @@
             "uid": "victoria-metrics"
           },
           "expr": "histogram_quantile(0.95, sum by (le, kind) (rate(gotk_reconcile_duration_seconds_bucket[10m])))",
+          "interval": "1m",
           "legendFormat": "{{kind}}"
         }
       ],
