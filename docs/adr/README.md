@@ -20,3 +20,4 @@ link to their replacement.
 | [0012](0012-observability-stack.md) | Observability stack: Alloy into VictoriaMetrics, VictoriaLogs and Grafana | Accepted |
 | [0013](0013-alerting.md) | Alerting: SLO burn rates and hard-down pages to Telegram | Accepted |
 | [0014](0014-backups.md) | Backups: restic into Cloudflare R2 with tested restores | Accepted |
+| [0015](0015-secret-checks.md) | Layered secret checks with a squash-only protected main | Accepted |

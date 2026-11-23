@@ -26,4 +26,4 @@ Single source of truth for a Raspberry Pi 5 homeserver running k3s, delivered by
 - `just lint`: all pre-commit checks. `just scan-history`: gitleaks over full history.
 - `just provision-deps` / `provision-check` / `provision` / `kubeconfig`: node provisioning ([runbook](docs/runbooks/provision-node.md)).
 ## Docs
-- Runbooks: [secrets](docs/runbooks/secrets.md), [Flux](docs/runbooks/maintain-flux.md), [kernel updates](docs/runbooks/kernel-updates.md), [tailnet policy](docs/runbooks/tailscale-policy.md). Decisions: [ADRs](docs/adr/README.md).
+- Runbooks: [secrets](docs/runbooks/secrets.md), [Flux](docs/runbooks/maintain-flux.md), [kernel updates](docs/runbooks/kernel-updates.md), [tailnet policy](docs/runbooks/tailscale-policy.md), [secret leak](docs/runbooks/secret-leak.md). Decisions: [ADRs](docs/adr/README.md).
