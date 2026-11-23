@@ -36,12 +36,8 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install pre-commit and gitleaks
-        run: |
-          pip install pre-commit==4.7.0
-          # Keep the version in step with the gitleaks rev in .pre-commit-config.yaml.
-          go install github.com/gitleaks/gitleaks/v8@v8.30.1
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Install pre-commit
+        run: pip install pre-commit==4.7.0
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
@@ -62,13 +58,16 @@ jobs:
           base="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
           pre-commit run --hook-stage pre-push --from-ref "$base" --to-ref "$HEAD_SHA"
 
-      # Untrusted text reaches the shell only through env.
+      # Untrusted text reaches the shell only through env, and is scanned by the
+      # pinned gitleaks hook.
       - name: Scan the pull request text
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
-        run: printf '%s\n%s\n%s\n' "$PR_TITLE" "$PR_BODY" "$HEAD_REF" | scripts/secrets/gitleaks.sh text
+        run: |
+          printf '%s\n%s\n%s\n' "$PR_TITLE" "$PR_BODY" "$HEAD_REF" > "$RUNNER_TEMP/pr-text.txt"
+          pre-commit run --hook-stage manual gitleaks-file --files "$RUNNER_TEMP/pr-text.txt"
 
       - name: Run the pre-commit hooks
         env:
