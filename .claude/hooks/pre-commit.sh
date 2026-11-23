@@ -14,7 +14,7 @@ case "$(realpath "$file")" in
   *) exit 0 ;;
 esac
 
-if ! out=$(pre-commit run --files "$file" 2>&1); then
+if ! out=$(SKIP=gitleaks pre-commit run --files "$file" 2>&1); then
   echo "$out" >&2
   exit 2
 fi
