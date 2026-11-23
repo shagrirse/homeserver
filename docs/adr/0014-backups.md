@@ -16,9 +16,10 @@ data on PVCs. Cloudflare R2 is the agreed backup target.
 - restic backs up into a private Cloudflare R2 bucket with client-side
   encryption. The passphrase lives only in the operator's password manager
   (and on paper), never in git or on the node.
-- Two writers share the repo: a workstation restic job pushes the age key
-  and `inventory.yml` daily, and a cluster CronJob mounts PVCs read-only to
-  back up app data from the first stateful app onward.
+- Two writers share the repo: a workstation restic job pushes the age key,
+  the gitleaks redaction rules file ([0015](0015-secret-checks.md)) and
+  `inventory.yml` daily, and a cluster CronJob mounts PVCs read-only to back
+  up app data from the first stateful app onward.
 - Retention is 14 daily, 8 weekly, 6 monthly snapshots. RPO is 24 hours;
   RTO is the existing rebuild path (`just provision` plus Flux) followed by
   a restic restore.
