@@ -43,7 +43,8 @@
       "Read(**/*.agekey)",
       "Read(**/keys.txt)",
       "Read(**/.env)",
-      "Read(**/provision/inventory.yml)"
+      "Read(**/provision/inventory.yml)",
+      "Read(**/.git/gitleaks-redact.toml)"
     ]
   },
   "hooks": {

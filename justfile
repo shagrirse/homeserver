@@ -8,7 +8,12 @@ lint:
 
 # Scan the full git history for secrets
 scan-history:
-    gitleaks git --redact -v .
+    git fetch origin '+refs/pull/*/head:refs/remotes/origin/pr/*'
+    pre-commit run --hook-stage manual gitleaks-history
+
+# Run the regression test of the secret checks
+test-secrets:
+    pre-commit run --hook-stage manual secrets-selftest
 
 # Install the Ansible collections the playbooks need
 provision-deps:

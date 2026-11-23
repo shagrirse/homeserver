@@ -71,6 +71,69 @@ Flux pulls this repo over SSH with a read-only deploy key named
   `provision/roles/flux/defaults/main.yml` from
   <https://api.github.com/meta>.
 
+## Redaction rules
+
+Values that must not appear in git, such as the real domain, LAN ranges and
+the hostname, are caught by extra gitleaks rules kept outside the repo, since
+the rules contain those values. The file is
+`$(git rev-parse --git-common-dir)/gitleaks-redact.toml`, extends
+`.gitleaks.toml` and holds one rule per value, with generic ids:
+
+```toml
+[extend]
+path = ".gitleaks.toml"
+
+[[rules]]
+id = "redact-domain"
+description = "real domain"
+regex = '''(?i)example\.com'''
+
+[[rules]]
+id = "redact-lan"
+description = "LAN subnet"
+regex = '''192\.0\.2\.\d{1,3}'''
+
+[[rules]]
+id = "redact-hostname"
+description = "node hostname"
+regex = '''(?i)examplehost'''
+
+[[rules]]
+id = "redact-canary"
+description = "redaction canary"
+regex = '''hs-canary-[0-9a-f]{10}'''
+```
+
+The `redact-canary` rule proves the rules are loaded: the scripts under
+`scripts/secrets/` build a matching value at runtime and expect a finding.
+All scans run with `--redact`, so findings never print the value.
+
+- CI reads the same content from the `GITLEAKS_CONFIG_TOML` Actions secret.
+  Run this after every edit:
+
+  ```sh
+  gh secret set GITLEAKS_CONFIG_TOML < "$(git rev-parse --git-common-dir)/gitleaks-redact.toml"
+  ```
+
+- Keep a copy of the file in the workstation backup. It exists nowhere else.
+- On the owner's workstation, export `GITLEAKS_REQUIRE_REDACTION=1` in the
+  shell profile. A clone without the file then fails closed instead of
+  scanning with the default rules. After any re-clone, restore the file from
+  backup first.
+
+## Push scans and their test
+
+The pre-push hooks scan every commit the remote lacks, including a detached
+`HEAD`. Merge commits are scanned twice: `gitleaks git` skips them, so the
+combined diff of each merge (`git show --cc`) goes through `gitleaks stdin`
+as well. `scripts/secrets/test.sh` rebuilds these cases in throwaway
+repositories with a runtime canary and real `git push` runs. Run it after
+changing anything under `scripts/secrets/`:
+
+```sh
+just test-secrets
+```
+
 ## Everyday use
 
 ```sh

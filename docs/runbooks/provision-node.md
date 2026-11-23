@@ -32,9 +32,9 @@ Prerequisites: [uv](https://docs.astral.sh/uv/), `just`, `pre-commit` and
 `sops` (the `community.sops` collection calls the `sops` binary).
 
 ```sh
-uv tool install ansible-core==2.22.0
-uv tool install ansible-lint      # the pre-commit hook runs the local install
+uv tool install ansible-core==2.22.0   # version as pinned in .pre-commit-config.yaml
 just provision-deps               # installs the pinned Ansible collections
+pre-commit install --install-hooks   # commit and push hooks
 cp provision/inventory.example.yml provision/inventory.yml   # then edit
 ```
 
