@@ -34,9 +34,11 @@ repositories, so GitHub push protection cannot enforce the redaction values.
   upstream hook with a pinned `ansible-core`.
 - The pre-push hooks scan every local commit the remote lacks: contents,
   commit messages, changed paths, branch and tag names, and the encryption
-  of each `*.sops.yaml` in each commit.
-- The `checks` workflow runs those range hooks over the pull request's
-  commits, scans the title, description and branch name, then runs every
+  of each `*.sops.yaml` in each commit. gitleaks skips merge commits, so
+  the combined diff of each merge is scanned as well.
+- The `checks` workflow first runs `scripts/secrets/test.sh`, then the
+  range hooks over the pull request's commits, scans the title,
+  description, branch name and the diff the squash lands, then runs every
   pre-commit hook over the tree. It is the single required status check.
 - `main` accepts squash merges only. The squash message is the pull request
   title and description, which the workflow scans.
