@@ -10,7 +10,7 @@ input=$(cat)
 tool=$(jq -r '.tool_name' <<<"$input")
 target=$(jq -r '.tool_input.file_path // .tool_input.command // ""' <<<"$input")
 
-files='sops/age|keys\.txt|\.agekey|age\.key|\.dec\.ya?ml|provision/inventory\.yml'
+files='sops/age|keys\.txt|\.agekey|age\.key|\.dec\.ya?ml|provision/inventory\.yml|gitleaks-redact\.toml'
 sops_decrypt='\bsops\b.*([[:space:]]-d\b|--decrypt|[[:space:]]decrypt\b|[[:space:]]exec-(env|file)\b)'
 kubectl_secret='\bkubectl\b.*\bget\b.*[^[:alnum:]_-][Ss][Ee][Cc][Rr][Ee][Tt][Ss]?([^[:alnum:]_-]|$)'
 

@@ -30,7 +30,6 @@ provision/group_vars/*/vault*
 .venv/
 __pycache__/
 .DS_Store
-.gitleaks.local.toml
 
 # Ansible
 .ansible/
