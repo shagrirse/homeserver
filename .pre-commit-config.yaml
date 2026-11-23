@@ -1,10 +1,43 @@
 # Install once: pre-commit install --install-hooks
 # Run everywhere: pre-commit run --all-files
+# Commit stage: fixers, linters and the staged secret scan. Push stage: secret scans of
+# every commit the remote lacks, plus SOPS encryption of every such commit.
+minimum_pre_commit_version: "4.7.0"
+default_install_hook_types: [pre-commit, pre-push]
+default_stages: [pre-commit]
 repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
     hooks:
       - id: gitleaks
+        entry: scripts/secrets/gitleaks.sh staged
+      - id: gitleaks
+        alias: gitleaks-range
+        name: gitleaks (pushed commits)
+        entry: scripts/secrets/gitleaks.sh range
+        stages: [pre-push, manual]
+        pass_filenames: false
+        always_run: true
+      - id: gitleaks
+        alias: gitleaks-meta
+        name: gitleaks (pushed messages, paths and ref names)
+        entry: scripts/secrets/gitleaks.sh meta
+        stages: [pre-push, manual]
+        pass_filenames: false
+        always_run: true
+      - id: gitleaks
+        alias: gitleaks-file
+        name: gitleaks (files)
+        entry: scripts/secrets/gitleaks.sh files
+        stages: [manual]
+        pass_filenames: true
+      - id: gitleaks
+        alias: gitleaks-history
+        name: gitleaks (full history)
+        entry: scripts/secrets/gitleaks.sh history
+        stages: [manual]
+        pass_filenames: false
+        always_run: true
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -13,8 +46,11 @@ repos:
         args: [--allow-multiple-documents]
         exclude: \.sops\.ya?ml$
       - id: end-of-file-fixer
+        stages: [pre-commit]
       - id: trailing-whitespace
+        stages: [pre-commit]
       - id: check-added-large-files
+        stages: [pre-commit]
       - id: check-merge-conflict
       - id: detect-private-key
       - id: check-case-conflict
@@ -34,9 +70,21 @@ repos:
         entry: 'ENC\[AES256_GCM'
         args: [--negate]
         files: .+\.sops\.ya?ml$
+      - id: sops-commits
+        name: SOPS files are encrypted in every pushed commit
+        language: script
+        entry: scripts/secrets/check-sops-commits.sh
+        stages: [pre-push, manual]
+        pass_filenames: false
+        always_run: true
+
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v26.11.0
+    hooks:
       - id: ansible-lint
-        name: ansible-lint
-        language: system
+        language_version: python3
+        additional_dependencies: [ansible-core==2.22.0]
         entry: bash -c 'cd provision && ansible-lint'
         files: ^provision/
         pass_filenames: false
+        always_run: false
