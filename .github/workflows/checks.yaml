@@ -1,0 +1,76 @@
+# Runs the repo's checks on every pull request: the pre-push secret scans and
+# the SOPS encryption check over each commit of the PR, a scan of the PR title,
+# description and branch name, then every pre-commit hook over the tree. The
+# redaction rules come from the GITLEAKS_CONFIG_TOML Actions secret, and the
+# scripts fail when they are missing. See docs/runbooks/secrets.md.
+name: Checks
+
+"on":
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+permissions: {}
+
+concurrency:
+  group: checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      GITLEAKS_CONFIG_TOML: ${{ secrets.GITLEAKS_CONFIG_TOML }}
+      GITLEAKS_REQUIRE_REDACTION: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # The ansible-lint hook runs on the runner's python3, which must be 3.12 or newer.
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: "3.13"
+
+      - name: Install pre-commit and gitleaks
+        run: |
+          pip install pre-commit==4.7.0
+          # Keep the version in step with the gitleaks rev in .pre-commit-config.yaml.
+          go install github.com/gitleaks/gitleaks/v8@v8.30.1
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # Keeps a Galaxy outage from failing every pull request once the cache is warm.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: provision/.ansible/collections
+          key: ansible-collections-${{ runner.os }}-${{ hashFiles('provision/requirements.yml') }}
+
+      - name: Scan the commits of the pull request
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          base="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
+          pre-commit run --hook-stage pre-push --from-ref "$base" --to-ref "$HEAD_SHA"
+
+      # Untrusted text reaches the shell only through env.
+      - name: Scan the pull request text
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: printf '%s\n%s\n%s\n' "$PR_TITLE" "$PR_BODY" "$HEAD_REF" | scripts/secrets/gitleaks.sh text
+
+      - name: Run the pre-commit hooks
+        env:
+          SKIP: gitleaks
+        run: pre-commit run --all-files --show-diff-on-failure
