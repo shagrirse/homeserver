@@ -121,6 +121,19 @@ All scans run with `--redact`, so findings never print the value.
   scanning with the default rules. After any re-clone, restore the file from
   backup first.
 
+## Push scans and their test
+
+The pre-push hooks scan every commit the remote lacks, including a detached
+`HEAD`. Merge commits are scanned twice: `gitleaks git` skips them, so the
+combined diff of each merge (`git show --cc`) goes through `gitleaks stdin`
+as well. `scripts/secrets/test.sh` rebuilds these cases in throwaway
+repositories with a runtime canary and real `git push` runs. Run it after
+changing anything under `scripts/secrets/`:
+
+```sh
+just test-secrets
+```
+
 ## Everyday use
 
 ```sh

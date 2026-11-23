@@ -32,6 +32,13 @@ repos:
         stages: [manual]
         pass_filenames: true
       - id: gitleaks
+        alias: secrets-selftest
+        name: secret checks self-test
+        entry: scripts/secrets/test.sh
+        stages: [manual]
+        pass_filenames: false
+        always_run: true
+      - id: gitleaks
         alias: gitleaks-history
         name: gitleaks (full history)
         entry: scripts/secrets/gitleaks.sh history
