@@ -16,13 +16,15 @@
     that: "'memory' in (k3s_cgroup_controllers.content | b64decode).split()"
     fail_msg: The memory cgroup controller is not enabled in this kernel.
 
+# k3s sets its local storage path to 0700 on start; the same mode here keeps
+# the two from undoing each other.
 - name: Create the persistent volume directory
   ansible.builtin.file:
     path: "{{ k3s_storage_path }}"
     state: directory
     owner: root
     group: root
-    mode: "0755"
+    mode: "0700"
 
 - name: Create the k3s config directory
   ansible.builtin.file:
