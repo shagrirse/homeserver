@@ -1,0 +1,29 @@
+# Applications, applied once the platform layers are ready. Each app lives in
+# kubernetes/apps/<app>/ and owns its namespace.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: infra-configs
+  interval: 1h
+  retryInterval: 2m
+  timeout: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./kubernetes/apps
+  prune: true
+  wait: true
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  # Manifests may say ${DOMAIN}; the values live encrypted in
+  # cluster-settings.sops.yaml, shared with the infrastructure layers.
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: cluster-settings
