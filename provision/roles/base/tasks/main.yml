@@ -55,3 +55,35 @@
     content: |
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
+
+# k3s ServiceLB publishes a Service port as a hostPort that matches every
+# address on the node, loopback included. A cluster DNS Service on port 53
+# would therefore capture the systemd-resolved stub on 127.0.0.53. With the
+# stub off, the node resolves through its upstream servers directly, so its
+# own lookups, image pulls and CoreDNS's upstream never depend on a cluster
+# Service.
+- name: Create the resolved drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Turn off the systemd-resolved stub listener
+  ansible.builtin.copy:
+    dest: /etc/systemd/resolved.conf.d/10-no-stub.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Resolve]
+      DNSStubListener=no
+  notify: Restart systemd-resolved
+
+- name: Point resolv.conf at the upstream servers
+  ansible.builtin.file:
+    path: /etc/resolv.conf
+    src: /run/systemd/resolve/resolv.conf
+    state: link
+    force: true
