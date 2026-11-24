@@ -1,4 +1,9 @@
 ---
+- name: Restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: restarted
+
 # Shared by every role. Roles notify this handler and the k3s role flushes
 # handlers once, so a single reboot covers all pending changes.
 #

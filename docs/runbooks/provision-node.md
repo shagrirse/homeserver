@@ -10,10 +10,10 @@ volumes into the cluster is outside its scope.
 
 | Role | Effect |
 | --- | --- |
-| `base` | Hostname, timezone, apt upgrade, automatic security updates (kernels need a manual reboot, see [kernel-updates.md](kernel-updates.md)) |
+| `base` | Hostname, timezone, apt upgrade, automatic security updates, node resolves through its upstream servers with the resolved stub off (kernels need a manual reboot, see [kernel-updates.md](kernel-updates.md)) |
 | `rpi_eeprom` | Boot order NVMe, then USB, then SD |
 | `storage_tuning` | `noatime` root, zram swap, journal kept in RAM, TRIM on USB SSDs |
-| `tailscale` | Installs Tailscale and joins the tailnet |
+| `tailscale` | Installs Tailscale, joins the tailnet, keeps the node off tailnet DNS |
 | `hardening` | Key-only SSH, ufw deny-by-default (SSH from the LAN, everything on `tailscale0`) |
 | `k3s` | Checks memory cgroups, k3s without Traefik, memory reserved for the host, volumes under `/srv/k8s` |
 | `flux` | The cluster age key and the deploy key as Secrets, the Flux Operator, and the `FluxInstance` from git on first install, see [maintain-flux.md](maintain-flux.md) |
