@@ -41,12 +41,6 @@ spec:
               value: "0"
             - name: FTLCONF_database_maxDBdays
               value: "7"
-            # The image tries to put file capabilities on pihole-FTL to run it
-            # unprivileged, which allowPrivilegeEscalation: false rules out
-            # (no_new_privs ignores file capabilities). FTL runs as root
-            # inside the reduced capability set below instead.
-            - name: DNSMASQ_USER
-              value: root
             - name: FTLCONF_webserver_port
               value: "80"
             - name: FTLCONF_ntp_ipv4_active
@@ -70,6 +64,9 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
+          # The DNS checks accept only an address in the answer: dig prints its
+          # timeout message on stdout, so matching any output would pass on a
+          # resolver that answers nothing.
           # Ready needs FTL answering and a non-empty blocklist. pi.hole is
           # answered locally, so readiness does not depend on the upstream
           # resolvers. The gravity check keeps a pod whose blocklist download
@@ -79,7 +76,7 @@ spec:
               command:
                 - sh
                 - -c
-                - 'dig +short +time=2 +tries=1 @127.0.0.1 pi.hole | grep -q . && test "$(pihole-FTL sqlite3 /etc/pihole/gravity.db "select count(*) from gravity")" -gt 0'
+                - 'dig +short +time=2 +tries=1 @127.0.0.1 pi.hole 2>/dev/null | grep -qE "^[0-9a-fA-F:.]+$" && test "$(pihole-FTL sqlite3 /etc/pihole/gravity.db "select count(*) from gravity")" -gt 0'
             periodSeconds: 10
             timeoutSeconds: 5
           # The first start builds the blocklist, which takes a few minutes.
@@ -88,7 +85,7 @@ spec:
               command:
                 - sh
                 - -c
-                - 'dig +short +time=2 +tries=1 @127.0.0.1 pi.hole | grep -q . && test "$(pihole-FTL sqlite3 /etc/pihole/gravity.db "select count(*) from gravity")" -gt 0'
+                - 'dig +short +time=2 +tries=1 @127.0.0.1 pi.hole 2>/dev/null | grep -qE "^[0-9a-fA-F:.]+$" && test "$(pihole-FTL sqlite3 /etc/pihole/gravity.db "select count(*) from gravity")" -gt 0'
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 30
@@ -99,7 +96,7 @@ spec:
               command:
                 - sh
                 - -c
-                - 'dig +short +time=2 +tries=1 @127.0.0.1 pi.hole | grep -q .'
+                - 'dig +short +time=2 +tries=1 @127.0.0.1 pi.hole 2>/dev/null | grep -qE "^[0-9a-fA-F:.]+$"'
             periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 3
@@ -109,13 +106,19 @@ spec:
               memory: 64Mi
             limits:
               memory: 256Mi
-          # The root filesystem stays writable: the image writes outside
-          # /etc/pihole while it starts.
+          # The image starts as root, puts file capabilities on pihole-FTL
+          # (SETFCAP) and runs it as the pihole user with only
+          # NET_BIND_SERVICE. Privilege escalation stays on because
+          # no_new_privs makes the kernel ignore file capabilities. Running
+          # FTL as root instead fails on arm64: dnsmasq's setgid call returns
+          # EAGAIN, the DNS thread stops, and the socket on port 53 fills up
+          # with unread queries. The root filesystem stays writable because
+          # the image writes outside /etc/pihole while it starts.
           securityContext:
-            allowPrivilegeEscalation: false
+            allowPrivilegeEscalation: true
             capabilities:
               drop: [ALL]
-              add: [CHOWN, SETUID, SETGID, NET_BIND_SERVICE, DAC_OVERRIDE, FOWNER]
+              add: [CHOWN, SETUID, SETGID, SETFCAP, NET_BIND_SERVICE, DAC_OVERRIDE, FOWNER]
           volumeMounts:
             - name: etc-pihole
               mountPath: /etc/pihole
