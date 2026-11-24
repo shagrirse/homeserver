@@ -72,6 +72,7 @@
           - "--hostname={{ tailscale_hostname }}"
           - "--auth-key=file:{{ tailscale_auth_key_path }}"
           - --ssh
+          - --accept-dns=false
       changed_when: true
 
   always:
@@ -97,6 +98,20 @@
   changed_when: false
   failed_when: false
   check_mode: false
+
+# Tailnet DNS points at a cluster Service. The node's own lookups, image pulls
+# and CoreDNS's upstream must not depend on it, so the node keeps resolving
+# through its upstream servers. Unlike switching SSH, this keeps connections.
+- name: Keep the node off tailnet DNS
+  ansible.builtin.command:
+    argv:
+      - tailscale
+      - set
+      - --accept-dns=false
+  when:
+    - tailscale_state.BackendState | default('') == 'Running'
+    - (tailscale_prefs.stdout | default('{}', true) | from_json).CorpDNS | default(true)
+  changed_when: true
 
 # Tailscale SSH lets tailnet devices log in by tailnet identity, with access
 # decided by the tailnet policy (docs/adr/0007-tailscale-ssh.md).
