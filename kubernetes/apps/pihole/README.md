@@ -15,7 +15,9 @@ only nameserver the tailnet hands out ([ADR 0016](../../../docs/adr/0016-pihole-
   `deployment.yaml`; the UI shows those settings as locked
 - Upgrade notes: bump the image tag and digest together and check that the
   index lists `linux/arm64`. A rollout surges a second pod and retires the old
-  one once the new one is Ready, so DNS keeps answering. FTL runs as root
-  (`DNSMASQ_USER=root`) inside a reduced capability set, because
-  `allowPrivilegeEscalation: false` makes the image's file capabilities
-  unusable
+  one once the new one is Ready, so DNS keeps answering. The image runs FTL
+  as the `pihole` user with file capabilities, which needs
+  `allowPrivilegeEscalation: true`; as root, dnsmasq's `setgid` fails on arm64
+  and DNS stops answering while the pod stays up. After a bump, confirm a
+  query to the pod IP is answered (`dig @<pod ip> example.com`), because the
+  probes only test `127.0.0.1`
