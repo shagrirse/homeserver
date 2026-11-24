@@ -14,6 +14,7 @@ Single source of truth for a Raspberry Pi 5 homeserver running k3s, delivered by
 - `provision/`: Ansible for the Pi (OS, k3s, Flux install).
 - `kubernetes/cluster/`: Flux entry point; `flux-system/flux-instance.yaml` defines Flux, `infrastructure.yaml` orders the platform layers.
 - `kubernetes/infrastructure/`: `controllers/` (Traefik, cert-manager), then `configs/` (Gateway, issuers, wildcard cert, cloudflared).
+- `kubernetes/apps/`: one directory per app (`pihole/`), applied by the `apps` Flux Kustomization after the platform layers.
 - `tailscale/`: tailnet policy, applied by `.github/workflows/`.
 - `templates/app/`: skeleton for `kubernetes/apps/<app>/`.
 - `docs/adr/`: decision records; add one for any architectural choice.
@@ -21,9 +22,9 @@ Single source of truth for a Raspberry Pi 5 homeserver running k3s, delivered by
 - `.claude/`: agent permissions and hooks.
 ## App contract
 - Each `kubernetes/apps/<app>/` has `kustomization.yaml`, a `helmrelease.yaml` or plain manifests, `secret.sops.yaml` if needed, and `README.md`; start from `templates/app/`.
-- It owns its namespace, sets requests and limits, defines probes, and is exposed only by an HTTPRoute on the shared Gateway ([Traefik](kubernetes/infrastructure/controllers/traefik/README.md)).
+- It owns its namespace, sets requests and limits, defines probes, and is exposed only by an HTTPRoute on the shared Gateway ([Traefik](kubernetes/infrastructure/controllers/traefik/README.md)); non-HTTP ports need an ADR (see [0016](docs/adr/0016-pihole-tailnet-dns.md)).
 ## Commands
 - `just lint`: all pre-commit checks. `just scan-history`: gitleaks over full history.
 - `just provision-deps` / `provision-check` / `provision` / `kubeconfig`: node provisioning ([runbook](docs/runbooks/provision-node.md)).
 ## Docs
-- Runbooks: [secrets](docs/runbooks/secrets.md), [Flux](docs/runbooks/maintain-flux.md), [kernel updates](docs/runbooks/kernel-updates.md), [tailnet policy](docs/runbooks/tailscale-policy.md), [secret leak](docs/runbooks/secret-leak.md). Decisions: [ADRs](docs/adr/README.md).
+- Runbooks: [secrets](docs/runbooks/secrets.md), [Flux](docs/runbooks/maintain-flux.md), [kernel updates](docs/runbooks/kernel-updates.md), [tailnet policy](docs/runbooks/tailscale-policy.md), [secret leak](docs/runbooks/secret-leak.md), [tailnet DNS](docs/runbooks/tailnet-dns.md). Decisions: [ADRs](docs/adr/README.md).

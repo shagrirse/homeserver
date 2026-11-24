@@ -21,3 +21,4 @@ link to their replacement.
 | [0013](0013-alerting.md) | Alerting: SLO burn rates and hard-down pages to Telegram | Accepted |
 | [0014](0014-backups.md) | Backups: restic into Cloudflare R2 with tested restores | Accepted |
 | [0015](0015-secret-checks.md) | Layered secret checks with a squash-only protected main | Accepted |
+| [0016](0016-pihole-tailnet-dns.md) | Pi-hole as the tailnet nameserver | Accepted |

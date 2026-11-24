@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pihole
+spec:
+  replicas: 1
+  # Surge first, retire the old pod only once the new one is Ready, so a
+  # rollout never leaves the Service without an endpoint. The old pod keeps
+  # answering while the new one builds its blocklist.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pihole
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pihole
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pihole
+          image: docker.io/pihole/pihole:2026.11.0@sha256:66c798d79a95c2691f280329c3611dba1746117c61c9f331907ca35a06a52778
+          env:
+            - name: TZ
+              value: Etc/UTC
+            - name: FTLCONF_dns_upstreams
+              value: 9.9.9.9;149.112.112.112
+            # Answer queries from any source. ServiceLB masquerades tailnet
+            # clients, so they arrive from outside the pod's subnet.
+            - name: FTLCONF_dns_listeningMode
+              value: ALL
+            # Every tailnet device reaches Pi-hole from the same source
+            # address, so a per-client rate limit would throttle them all.
+            - name: FTLCONF_dns_rateLimit_count
+              value: "0"
+            - name: FTLCONF_database_maxDBdays
+              value: "7"
+            # The image tries to put file capabilities on pihole-FTL to run it
+            # unprivileged, which allowPrivilegeEscalation: false rules out
+            # (no_new_privs ignores file capabilities). FTL runs as root
+            # inside the reduced capability set below instead.
+            - name: DNSMASQ_USER
+              value: root
+            - name: FTLCONF_webserver_port
+              value: "80"
+            - name: FTLCONF_ntp_ipv4_active
+              value: "false"
+            - name: FTLCONF_ntp_ipv6_active
+              value: "false"
+            - name: FTLCONF_ntp_sync_active
+              value: "false"
+            - name: FTLCONF_webserver_api_password
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-admin
+                  key: password
+          ports:
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          # Ready needs FTL answering and a non-empty blocklist. pi.hole is
+          # answered locally, so readiness does not depend on the upstream
+          # resolvers. The gravity check keeps a pod whose blocklist download
+          # failed out of service.
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'dig +short +time=2 +tries=1 @127.0.0.1 pi.hole | grep -q . && test "$(pihole-FTL sqlite3 /etc/pihole/gravity.db "select count(*) from gravity")" -gt 0'
+            periodSeconds: 10
+            timeoutSeconds: 5
+          # The first start builds the blocklist, which takes a few minutes.
+          startupProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'dig +short +time=2 +tries=1 @127.0.0.1 pi.hole | grep -q . && test "$(pihole-FTL sqlite3 /etc/pihole/gravity.db "select count(*) from gravity")" -gt 0'
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          # Liveness only checks that FTL answers. An empty blocklist is a
+          # download problem, and restarting the container would not fix it.
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'dig +short +time=2 +tries=1 @127.0.0.1 pi.hole | grep -q .'
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          # The root filesystem stays writable: the image writes outside
+          # /etc/pihole while it starts.
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+              add: [CHOWN, SETUID, SETGID, NET_BIND_SERVICE, DAC_OVERRIDE, FOWNER]
+          volumeMounts:
+            - name: etc-pihole
+              mountPath: /etc/pihole
+      volumes:
+        # Disk-backed scratch space for the blocklist database and query log.
+        # Nothing here needs to outlive the pod: the blocklist is rebuilt on
+        # start and query history is short lived.
+        - name: etc-pihole
+          emptyDir:
+            sizeLimit: 512Mi
