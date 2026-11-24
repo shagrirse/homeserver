@@ -25,9 +25,9 @@ spec:
       resources:
         requests:
           cpu: 10m
-          memory: 16Mi
-        limits:
           memory: 32Mi
+        limits:
+          memory: 64Mi
     controller:
       type: daemonset
       volumes:
@@ -76,9 +76,9 @@ spec:
       resources:
         requests:
           cpu: 50m
-          memory: 96Mi
+          memory: 192Mi
         limits:
-          memory: 256Mi
+          memory: 512Mi
       configMap:
         create: true
         content: |-
